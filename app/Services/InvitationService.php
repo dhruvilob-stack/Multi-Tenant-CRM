@@ -29,7 +29,14 @@ class InvitationService
         return $this->base64UrlEncode($encrypted);
     }
 
-    public function sendInvitation(int $inviterId, string $inviteeEmail, string $role, int $organizationId, int $ttlHours = 72): Invitation
+    public function sendInvitation(
+        int $inviterId,
+        string $inviteeEmail,
+        string $role,
+        int $organizationId,
+        int $ttlHours = 72,
+        bool $allowExistingPendingUser = false
+    ): Invitation
     {
         $normalizedEmail = strtolower(trim($inviteeEmail));
         $inviter = User::query()->findOrFail($inviterId);
@@ -40,22 +47,36 @@ class InvitationService
             ]);
         }
 
-        if ((int) $inviter->organization_id !== (int) $organizationId) {
+        if (! AccessMatrix::isSuper($inviter) && (int) $inviter->organization_id !== (int) $organizationId) {
             throw ValidationException::withMessages([
                 'organization_id' => 'Invalid organization for inviter.',
             ]);
         }
 
-        if (! array_key_exists($role, AccessMatrix::allowedInviteRoles($inviter))) {
+        if (! AccessMatrix::isSuper($inviter) && ! array_key_exists($role, AccessMatrix::allowedInviteRoles($inviter))) {
             throw ValidationException::withMessages([
                 'role' => 'You are not allowed to invite this role.',
             ]);
         }
 
-        if (User::query()->where('email', $normalizedEmail)->exists()) {
+        $existingUser = User::withoutGlobalScopes()->where('email', $normalizedEmail)->first();
+
+        if ($existingUser && ! $allowExistingPendingUser) {
             throw ValidationException::withMessages([
                 'invitee_email' => 'A user with this email already exists.',
             ]);
+        }
+
+        if ($existingUser && $allowExistingPendingUser) {
+            $sameOrganization = (int) $existingUser->organization_id === (int) $organizationId;
+            $sameRole = (string) $existingUser->role === (string) $role;
+            $isPending = (string) $existingUser->status === 'pending';
+
+            if (! ($sameOrganization && $sameRole && $isPending)) {
+                throw ValidationException::withMessages([
+                    'invitee_email' => 'Existing user does not match pending invite requirements.',
+                ]);
+            }
         }
 
         return DB::transaction(function () use ($inviterId, $normalizedEmail, $role, $organizationId, $ttlHours): Invitation {
@@ -120,18 +141,43 @@ class InvitationService
         return DB::transaction(function () use ($token, $name, $password): User {
             ['invitation' => $invitation, 'payload' => $payload] = $this->verifyToken($token);
 
-            $user = User::query()->create([
-                'name' => $name,
-                'email' => $payload['email'],
-                'password' => $password,
-                'role' => $payload['role'],
-                'organization_id' => $payload['org_id'],
-                'parent_id' => $payload['inviter_id'],
-                'status' => 'active',
-                'invitation_token' => $token,
-                'invitation_accepted_at' => now(),
-                'email_verified_at' => now(),
-            ]);
+            $user = User::withoutGlobalScopes()
+                ->where('email', $payload['email'])
+                ->where('organization_id', $payload['org_id'])
+                ->where('role', $payload['role'])
+                ->first();
+
+            if ($user && $user->status !== 'pending') {
+                throw ValidationException::withMessages([
+                    'token' => 'User is already active for this invitation.',
+                ]);
+            }
+
+            if (! $user) {
+                $user = User::query()->create([
+                    'name' => $name,
+                    'email' => $payload['email'],
+                    'password' => $password,
+                    'role' => $payload['role'],
+                    'organization_id' => $payload['org_id'],
+                    'parent_id' => $payload['inviter_id'],
+                    'status' => 'active',
+                    'invitation_token' => $token,
+                    'invitation_accepted_at' => now(),
+                    'email_verified_at' => now(),
+                ]);
+            } else {
+                $user->fill([
+                    'name' => $name ?: $user->name,
+                    'password' => $password,
+                    'parent_id' => $payload['inviter_id'],
+                    'status' => 'active',
+                    'invitation_token' => $token,
+                    'invitation_accepted_at' => now(),
+                    'email_verified_at' => now(),
+                ]);
+                $user->save();
+            }
 
             $user->organizations()->syncWithoutDetaching([$payload['org_id']]);
 

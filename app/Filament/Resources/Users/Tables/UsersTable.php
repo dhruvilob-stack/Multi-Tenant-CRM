@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Filament\Support\ResourceDataExchange;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -32,6 +33,7 @@ class UsersTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ...ResourceDataExchange::toolbarActions('users'),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

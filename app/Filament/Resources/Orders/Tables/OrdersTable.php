@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Orders\Tables;
 
+use App\Filament\Support\ResourceDataExchange;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -30,6 +31,7 @@ class OrdersTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ...ResourceDataExchange::toolbarActions('orders'),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

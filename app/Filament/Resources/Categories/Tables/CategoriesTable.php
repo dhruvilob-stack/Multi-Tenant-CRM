@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Categories\Tables;
 
+use App\Filament\Support\ResourceDataExchange;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -28,6 +29,7 @@ class CategoriesTable
                 EditAction::make(),
             ])
             ->toolbarActions([
+                ...ResourceDataExchange::toolbarActions('categories'),
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
                 ]),

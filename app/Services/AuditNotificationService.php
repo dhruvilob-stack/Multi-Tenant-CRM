@@ -18,9 +18,11 @@ class AuditNotificationService
 {
     public function log(Model $model, string $event, array $before = [], array $after = []): AuditLog
     {
+        $modelKey = (string) $model->getKey();
+
         return AuditLog::query()->create([
             'auditable_type' => $model::class,
-            'auditable_id' => $model->getKey(),
+            'auditable_id' => $modelKey,
             'event' => $event,
             'performed_by' => Auth::id() ? (string) Auth::user()->email : 'system',
             'performed_role' => Auth::user()?->role,
@@ -44,6 +46,7 @@ class AuditNotificationService
         iterable|Arrayable|Collection|callable $recipients
     ): array
     {
+        $modelKey = (string) $model->getKey();
         $rows = [];
         $targetList = $this->normalizeRecipients(
             is_callable($recipients) ? $recipients($model) : $recipients
@@ -60,7 +63,7 @@ class AuditNotificationService
 
             $rows[] = $notification = ResourceNotification::query()->create([
                 'notificationable_type' => $model::class,
-                'notificationable_id' => $model->getKey(),
+                'notificationable_id' => $modelKey,
                 'recipient_id' => $recipient->id,
                 'recipient_role' => $recipient->role,
                 'action' => $action,

@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\ProfileLocaleController;
 use App\Http\Controllers\NotificationSectionController;
+use App\Http\Controllers\SuperAdmin\TenantPanelAccessController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index']);
@@ -66,6 +67,11 @@ Route::prefix('admin')->middleware('auth')->group(function (): void {
 Route::post('/profile/locale', [ProfileLocaleController::class, 'update'])
     ->middleware('auth')
     ->name('filament.profile.locale');
+
+Route::middleware('auth')->get(
+    '/super-admin/tenants/{organization}/open-admin',
+    [TenantPanelAccessController::class, 'openAdmin']
+)->name('super-admin.tenants.open-admin');
 
 Route::middleware('auth')->prefix('filament/notifications/sections')->group(function (): void {
     Route::get('/counts', [NotificationSectionController::class, 'counts'])

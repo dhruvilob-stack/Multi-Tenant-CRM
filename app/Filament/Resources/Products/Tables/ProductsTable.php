@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Products\Tables;
 use App\Filament\Resources\Products\ProductResource;
 use App\Models\Product;
 use App\Models\ProductChangeRequest;
+use App\Filament\Support\ResourceDataExchange;
 use App\Support\UserRole;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -60,6 +61,7 @@ class ProductsTable
                     }),
             ])
             ->toolbarActions([
+                ...ResourceDataExchange::toolbarActions('products'),
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->visible(fn (): bool => in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),

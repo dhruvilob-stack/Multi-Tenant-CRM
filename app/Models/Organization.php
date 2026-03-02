@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\BaseModel;
+use App\Services\TenantSyncService;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,6 +27,17 @@ class Organization extends BaseModel
         return [
             'settings' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        parent::booted();
+
+        static::created(function (Organization $organization): void {
+            if (! $organization->tenant_id) {
+                app(TenantSyncService::class)->ensureForOrganization($organization);
+            }
+        });
     }
 
     public function tenant(): BelongsTo
