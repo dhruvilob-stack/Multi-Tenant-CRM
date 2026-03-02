@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Invitation extends Model
+class Invitation extends BaseModel
 {
     protected $fillable = [
         'inviter_id',
         'invitee_email',
         'role',
         'token',
+        'token_hash',
         'organization_id',
         'expires_at',
         'accepted_at',

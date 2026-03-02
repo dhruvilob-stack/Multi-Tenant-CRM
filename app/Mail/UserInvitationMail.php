@@ -25,11 +25,18 @@ class UserInvitationMail extends Mailable
 
     public function content(): Content
     {
+        $this->invitation->loadMissing('organization', 'inviter');
+        $baseUrl = rtrim(config('app.url', 'http://127.0.0.1:8000'), '/');
+        $acceptUrl = sprintf('%s/%s/invitation/%s', $baseUrl, $this->invitation->role, $this->invitation->token);
+
         return new Content(
             view: 'emails.invitations.user',
             with: [
                 'invitation' => $this->invitation,
-                'acceptUrl' => url('/invitation/'.$this->invitation->token),
+                'acceptUrl' => $acceptUrl,
+                'organizationName' => $this->invitation->organization?->name,
+                'inviterName' => $this->invitation->inviter?->name,
+                'inviterEmail' => $this->invitation->inviter?->email,
             ]
         );
     }

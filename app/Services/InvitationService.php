@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\SendInvitationEmailJob;
 use App\Models\Invitation;
 use App\Models\User;
+use App\Support\AccessMatrix;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -31,6 +32,25 @@ class InvitationService
     public function sendInvitation(int $inviterId, string $inviteeEmail, string $role, int $organizationId, int $ttlHours = 72): Invitation
     {
         $normalizedEmail = strtolower(trim($inviteeEmail));
+        $inviter = User::query()->findOrFail($inviterId);
+
+        if ($inviter->status !== 'active') {
+            throw ValidationException::withMessages([
+                'inviter_id' => 'Inviter account is not active.',
+            ]);
+        }
+
+        if ((int) $inviter->organization_id !== (int) $organizationId) {
+            throw ValidationException::withMessages([
+                'organization_id' => 'Invalid organization for inviter.',
+            ]);
+        }
+
+        if (! array_key_exists($role, AccessMatrix::allowedInviteRoles($inviter))) {
+            throw ValidationException::withMessages([
+                'role' => 'You are not allowed to invite this role.',
+            ]);
+        }
 
         if (User::query()->where('email', $normalizedEmail)->exists()) {
             throw ValidationException::withMessages([
@@ -52,6 +72,7 @@ class InvitationService
                 'invitee_email' => $normalizedEmail,
                 'role' => $role,
                 'token' => $token,
+                'token_hash' => hash('sha256', $token),
                 'organization_id' => $organizationId,
                 'expires_at' => now()->addHours($ttlHours),
             ]);
@@ -64,7 +85,10 @@ class InvitationService
 
     public function verifyToken(string $token): array
     {
-        $invitation = Invitation::query()->where('token', $token)->first();
+        $invitation = Invitation::query()
+            ->where('token_hash', hash('sha256', $token))
+            ->orWhere('token', $token) // backward compatibility for legacy rows.
+            ->first();
 
         if (! $invitation) {
             throw ValidationException::withMessages(['token' => 'Invitation token not found.']);

@@ -177,7 +177,8 @@ return new class extends Migration
             $table->foreignId('inviter_id')->constrained('users')->cascadeOnDelete();
             $table->string('invitee_email');
             $table->string('role', 50);
-            $table->string('token')->unique();
+            $table->text('token');
+            $table->string('token_hash', 64)->unique();
             $table->foreignId('organization_id')->constrained('organizations')->cascadeOnDelete();
             $table->timestamp('expires_at');
             $table->timestamp('accepted_at')->nullable();

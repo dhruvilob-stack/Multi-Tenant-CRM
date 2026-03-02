@@ -5,22 +5,27 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Support\UserRole;
+use App\Support\Concerns\HasAuditNotifications;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\ResourceNotification;
+use App\Models\CustomRole;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Collection;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasAuditNotifications;
 
     /**
      * The attributes that are mass assignable.
@@ -37,6 +42,8 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'invitation_token',
         'invitation_accepted_at',
         'status',
+        'locale',
+        'custom_role_id',
     ];
 
     /**
@@ -73,6 +80,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return $this->belongsTo(Organization::class);
     }
 
+    public function customRole(): BelongsTo
+    {
+        return $this->belongsTo(CustomRole::class);
+    }
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(User::class, 'parent_id');
@@ -86,6 +98,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     public function sentInvitations(): HasMany
     {
         return $this->hasMany(Invitation::class, 'inviter_id');
+    }
+
+    public function resourceNotifications(): HasMany
+    {
+        return $this->hasMany(ResourceNotification::class, 'recipient_id');
     }
 
     public function isRole(string $role): bool
@@ -119,5 +136,29 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         }
 
         return true;
+    }
+
+    public function hasCustomPermission(string $permission): bool
+    {
+        $permissions = $this->customRole?->permissions ?? [];
+
+        return in_array($permission, $permissions, true);
+    }
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('organization_isolation', function (Builder $query): void {
+            if (! Auth::hasUser()) {
+                return;
+            }
+
+            $user = Auth::user();
+
+            if (! $user || $user->role === UserRole::SUPER_ADMIN) {
+                return;
+            }
+
+            $query->where($query->qualifyColumn('organization_id'), $user->organization_id);
+        });
     }
 }

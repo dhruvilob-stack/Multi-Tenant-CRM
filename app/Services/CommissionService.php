@@ -46,7 +46,10 @@ class CommissionService
 
         $commissionType = $rule?->commission_type ?? 'percentage';
         $commissionRate = (float) ($rule?->commission_value ?? 0);
-        $basisAmount = (float) $item->total;
+        $basisAmount = match ($fromRole) {
+            UserRole::MANUFACTURER => (float) (($item->product?->base_price ?? 0) * (float) $item->qty),
+            default => (float) $item->total,
+        };
         $commissionAmount = $commissionType === 'fixed'
             ? $commissionRate
             : ($basisAmount * $commissionRate / 100);

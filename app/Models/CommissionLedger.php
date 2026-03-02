@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class CommissionLedger extends Model
+class CommissionLedger extends BaseModel
 {
     protected $table = 'commission_ledger';
 

@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class MarginCommission extends Model
+class MarginCommission extends BaseModel
 {
     protected $fillable = [
         'product_id',
