@@ -26,4 +26,9 @@ class EditInventory extends EditRecord
 
         return $data;
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return static::$resource::getUrl('view', ['record' => $this->record]);
+    }
 }

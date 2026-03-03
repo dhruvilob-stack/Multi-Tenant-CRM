@@ -16,9 +16,14 @@ class InventoriesTable
         return $table
             ->columns([
                 TextColumn::make('product.name')->label('Product')->searchable(),
+                TextColumn::make('sku')->label('SKU')->searchable(),
+                TextColumn::make('barcode')->searchable()->toggleable(),
                 TextColumn::make('owner.name')->label('Owner'),
                 TextColumn::make('quantity_available')->numeric(),
+                TextColumn::make('security_stock')->numeric(),
                 TextColumn::make('quantity_reserved')->numeric(),
+                TextColumn::make('unit_price')->money('USD'),
+                TextColumn::make('discount_percent')->suffix('%'),
                 TextColumn::make('warehouse_location'),
             ])
             ->filters([

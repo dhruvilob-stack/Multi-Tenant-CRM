@@ -6,6 +6,7 @@ use App\Filament\Resources\Inventories\Pages\CreateInventory;
 use App\Filament\Resources\Inventories\Pages\EditInventory;
 use App\Filament\Resources\Inventories\Pages\ListInventories;
 use App\Filament\Resources\Inventories\Pages\ViewInventory;
+use App\Filament\Resources\Inventories\RelationManagers\AuditLogsRelationManager;
 use App\Filament\Resources\Inventories\Schemas\InventoryForm;
 use App\Filament\Resources\Inventories\Schemas\InventoryInfolist;
 use App\Filament\Resources\Inventories\Tables\InventoriesTable;
@@ -83,7 +84,7 @@ class InventoryResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            AuditLogsRelationManager::class,
         ];
     }
 
@@ -97,7 +98,6 @@ class InventoryResource extends Resource
         ];
     }
 }
-
 
 
 

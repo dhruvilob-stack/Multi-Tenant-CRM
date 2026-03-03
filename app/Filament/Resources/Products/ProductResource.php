@@ -31,14 +31,7 @@ class ProductResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, [
-            UserRole::SUPER_ADMIN,
-            UserRole::ORG_ADMIN,
-            UserRole::MANUFACTURER,
-            UserRole::DISTRIBUTOR,
-            UserRole::VENDOR,
-            UserRole::CONSUMER,
-        ], true);
+        return false;
     }
 
     public static function canViewAny(): bool
@@ -105,7 +98,6 @@ class ProductResource extends Resource
         ];
     }
 }
-
 
 
 

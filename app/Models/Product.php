@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Models\BaseModel;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Product extends BaseModel
 {
@@ -20,6 +22,18 @@ class Product extends BaseModel
         'images',
         'available_for_distributor',
         'status',
+        'slug',
+        'price',
+        'old_price',
+        'cost',
+        'barcode',
+        'qty',
+        'security_stock',
+        'is_visible',
+        'featured',
+        'backorder',
+        'requires_shipping',
+        'published_at',
     ];
 
     protected function casts(): array
@@ -28,6 +42,16 @@ class Product extends BaseModel
             'images' => 'array',
             'available_for_distributor' => 'boolean',
             'base_price' => 'decimal:2',
+            'price' => 'decimal:2',
+            'old_price' => 'decimal:2',
+            'cost' => 'decimal:2',
+            'qty' => 'integer',
+            'security_stock' => 'integer',
+            'is_visible' => 'boolean',
+            'featured' => 'boolean',
+            'backorder' => 'boolean',
+            'requires_shipping' => 'boolean',
+            'published_at' => 'datetime',
         ];
     }
 
@@ -44,5 +68,38 @@ class Product extends BaseModel
     public function inventoryRecords(): HasMany
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    protected function price(): Attribute
+    {
+        return Attribute::make(
+            set: function (mixed $value): array {
+                $numeric = is_numeric($value) ? (float) $value : 0.0;
+
+                return [
+                    'price' => $numeric,
+                    'base_price' => $numeric,
+                ];
+            },
+        );
+    }
+
+    protected function basePrice(): Attribute
+    {
+        return Attribute::make(
+            set: function (mixed $value): array {
+                $numeric = is_numeric($value) ? (float) $value : 0.0;
+
+                return [
+                    'base_price' => $numeric,
+                    'price' => $this->attributes['price'] ?? $numeric,
+                ];
+            },
+        );
     }
 }

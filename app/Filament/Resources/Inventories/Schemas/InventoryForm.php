@@ -29,8 +29,25 @@ class InventoryForm
                 Hidden::make('owner_type')
                     ->default(User::class)
                     ->dehydrated(true),
+                TextInput::make('sku')
+                    ->label('SKU (Stock Keeping Unit)')
+                    ->required(),
+                TextInput::make('barcode')
+                    ->label('Barcode (ISBN, UPC, GTIN, etc.)'),
                 TextInput::make('quantity_available')->numeric()->default(0)->required(),
+                TextInput::make('security_stock')->numeric()->default(0)->required(),
                 TextInput::make('quantity_reserved')->numeric()->default(0)->required(),
+                TextInput::make('unit_price')
+                    ->label('Inventory price')
+                    ->numeric()
+                    ->default(0)
+                    ->required(),
+                TextInput::make('discount_percent')
+                    ->label('Discount %')
+                    ->numeric()
+                    ->default(0)
+                    ->minValue(0)
+                    ->maxValue(100),
                 TextInput::make('warehouse_location'),
             ]);
     }
