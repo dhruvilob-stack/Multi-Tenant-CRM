@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\ApplyUserLocale;
+use App\Http\Middleware\RedirectPanelLoginToUniversalLogin;
 use App\Support\CrmGlobalSearchProvider;
 use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
 use CharrafiMed\GlobalSearchModal\GlobalSearchResults as ModalGlobalSearchResults;
@@ -65,6 +66,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([])
             ->middleware([
+                RedirectPanelLoginToUniversalLogin::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

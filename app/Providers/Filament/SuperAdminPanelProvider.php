@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\RedirectPanelLoginToUniversalLogin;
 use App\Support\CrmGlobalSearchProvider;
 use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
 use CharrafiMed\GlobalSearchModal\GlobalSearchResults as ModalGlobalSearchResults;
@@ -56,6 +57,7 @@ class SuperAdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/SuperAdmin/Pages'), for: 'App\\Filament\\SuperAdmin\\Pages')
             ->widgets([])
             ->middleware([
+                RedirectPanelLoginToUniversalLogin::class,
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

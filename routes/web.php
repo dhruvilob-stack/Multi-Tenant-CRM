@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\DemoController;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -15,7 +14,7 @@ use App\Http\Controllers\OrganizationMailAttachmentController;
 use App\Http\Controllers\SuperAdmin\TenantPanelAccessController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [HomeController::class, 'index']);
+Route::get('/', [LoginController::class, 'showForm']);
 Route::get('/login', [LoginController::class, 'showForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout']);

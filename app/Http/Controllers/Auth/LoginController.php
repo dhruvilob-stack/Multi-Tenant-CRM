@@ -3,14 +3,20 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Support\UserRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class LoginController extends Controller
 {
-    public function showForm()
+    public function showForm(): View|RedirectResponse
     {
+        if (Auth::check()) {
+            return redirect($this->resolveDashboardPath(Auth::user()?->role));
+        }
+
         return view('auth.login');
     }
 
@@ -27,8 +33,7 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
-        $user = Auth::user();
-        $target = $user?->role === 'super_admin' ? '/super-admin' : '/admin';
+        $target = $this->resolveDashboardPath(Auth::user()?->role);
 
         return redirect()->intended($target);
     }
@@ -40,5 +45,10 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function resolveDashboardPath(?string $role): string
+    {
+        return $role === UserRole::SUPER_ADMIN ? '/super-admin' : '/admin';
     }
 }
