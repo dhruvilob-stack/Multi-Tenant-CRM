@@ -34,6 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->spa(true, true)
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->brandName(fn(): HtmlString => new HtmlString(sprintf(
                 'DN-CRM <span class="ml-2 px-3 py-1 text-[11px] uppercase tracking-widest font-semibold rounded-full bg-emerald-500 text-white">%s</span>',
                 Str::of(auth()->user()?->role ?? 'guest')->replace('_', ' ')->title(),

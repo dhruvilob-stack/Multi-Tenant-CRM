@@ -3,6 +3,7 @@
 namespace App\Filament\SuperAdmin\Pages;
 
 use App\Filament\Concerns\HasDashboardArrangement;
+use App\Filament\Widgets\FeaturesOverview;
 use App\Filament\Widgets\PanelResourcesOverview;
 use Filament\Pages\Dashboard as BaseDashboard;
 
@@ -17,6 +18,7 @@ class Dashboard extends BaseDashboard
     {
         return [
             PanelResourcesOverview::class,
+            FeaturesOverview::class,
         ];
     }
 

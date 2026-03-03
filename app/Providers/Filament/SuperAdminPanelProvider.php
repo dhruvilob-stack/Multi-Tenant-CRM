@@ -30,6 +30,7 @@ class SuperAdminPanelProvider extends PanelProvider
             ->path('super-admin')
             ->login()
             ->spa(true, true)
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->brandName('CRM Control Center')
             ->colors([
                 'primary' => Color::Blue,
