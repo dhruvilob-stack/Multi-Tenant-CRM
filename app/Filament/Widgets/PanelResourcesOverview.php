@@ -13,6 +13,11 @@ class PanelResourcesOverview extends StatsOverviewWidget
 {
     protected ?string $heading = 'Resources Overview';
 
+    public static function canView(): bool
+    {
+        return false;
+    }
+
     protected function getColumns(): int
     {
         return 4;

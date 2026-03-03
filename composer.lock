@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4853cbf2dcc3e509fc1bd7a6d8a72124",
+    "content-hash": "683cf53c5143df88aa0829b450c7cf4d",
     "packages": [
         {
             "name": "akaunting/laravel-money",
@@ -4339,6 +4339,72 @@
                 }
             ],
             "time": "2025-12-10T09:58:31+00:00"
+        },
+        {
+            "name": "mddev31/filament-dynamic-dashboard",
+            "version": "v0.4.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/MDDev31/filament-dynamic-dashboard.git",
+                "reference": "0a0dab6188f9e30bb7188a9b90f1c5291a6d0033"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/MDDev31/filament-dynamic-dashboard/zipball/0a0dab6188f9e30bb7188a9b90f1c5291a6d0033",
+                "reference": "0a0dab6188f9e30bb7188a9b90f1c5291a6d0033",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^4.1.1|^5.0",
+                "illuminate/contracts": "^11.0|^12.0",
+                "php": "^8.3",
+                "spatie/laravel-package-tools": "^1.92"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "mockery/mockery": "^1.6",
+                "orchestra/testbench": "^9.0|^10.0",
+                "pestphp/pest": "^4.0",
+                "pestphp/pest-plugin-laravel": "^4.0",
+                "phpunit/phpunit": "^12.5",
+                "spatie/pest-plugin-test-time": "^2.2"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "MDDev\\DynamicDashboard\\FilamentDynamicDashboardServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "MDDev\\DynamicDashboard\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Maxime DANJOU",
+                    "email": "maxime@mddev.fr",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Dynamic dashboard for Laravel Filament.",
+            "homepage": "https://github.com/mddev31/filament-dynamic-dashboard",
+            "keywords": [
+                "dashboard",
+                "filament",
+                "laravel"
+            ],
+            "support": {
+                "issues": "https://github.com/mddev31/filament-dynamic-dashboard/issues",
+                "source": "https://github.com/mddev31/filament-dynamic-dashboard"
+            },
+            "time": "2026-02-25T06:49:35+00:00"
         },
         {
             "name": "monolog/monolog",
