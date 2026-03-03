@@ -29,6 +29,7 @@ class Invoice extends BaseModel
         'terms_conditions',
         'description',
         'currency',
+        'payment_method',
         'tax_region',
         'tax_mode',
         'overall_discount_type',

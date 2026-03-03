@@ -114,6 +114,14 @@ class InvoiceForm
                             ])
                             ->default('USD')
                             ->required(),
+                        Select::make('payment_method')
+                            ->options([
+                                'cash' => 'Cash',
+                                'card' => 'Card',
+                                'bank_transfer' => 'Bank Transfer',
+                                'upi' => 'UPI',
+                                'wallet' => 'Wallet',
+                            ]),
                         Radio::make('tax_mode')
                             ->options(['individual' => 'Individual', 'group' => 'Group'])
                             ->default('individual')

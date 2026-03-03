@@ -7,8 +7,11 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Admin\WorkflowController;
+use App\Http\Controllers\Admin\InvoicePdfController;
 use App\Http\Controllers\ProfileLocaleController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationSectionController;
+use App\Http\Controllers\OrganizationMailAttachmentController;
 use App\Http\Controllers\SuperAdmin\TenantPanelAccessController;
 use Illuminate\Support\Facades\Route;
 
@@ -58,15 +61,22 @@ Route::prefix('admin')->middleware('auth')->group(function (): void {
     Route::post('/invoices/{id}/mark-paid', [WorkflowController::class, 'markInvoicePaid']);
     Route::post('/invoices/{id}/cancel', [WorkflowController::class, 'cancelInvoice']);
     Route::post('/invoices/{id}/credit', [WorkflowController::class, 'creditInvoice']);
+    Route::get('/workflows/invoices/{id}/pdf', [InvoicePdfController::class, 'download'])->name('admin.invoices.pdf');
 
     Route::post('/orders/{id}/confirm', [WorkflowController::class, 'confirmOrder']);
+    Route::post('/orders/{id}/process', [WorkflowController::class, 'processOrder']);
     Route::post('/orders/{id}/ship', [WorkflowController::class, 'shipOrder']);
     Route::post('/orders/{id}/deliver', [WorkflowController::class, 'deliverOrder']);
+    Route::post('/orders/{id}/generate-quotation-invoice', [WorkflowController::class, 'generateQuotationAndInvoiceForOrder']);
 });
 
 Route::post('/profile/locale', [ProfileLocaleController::class, 'update'])
     ->middleware('auth')
     ->name('filament.profile.locale');
+
+Route::post('/profile/update', [ProfileController::class, 'update'])
+    ->middleware('auth')
+    ->name('filament.profile.update');
 
 Route::middleware('auth')->get(
     '/super-admin/tenants/{organization}/open-admin',
@@ -79,3 +89,8 @@ Route::middleware('auth')->prefix('filament/notifications/sections')->group(func
     Route::post('/read', [NotificationSectionController::class, 'markRead'])
         ->name('filament.notifications.sections.read');
 });
+
+Route::middleware('auth')->get(
+    '/admin/inbox-mail/attachments/{recipient}/{index}',
+    [OrganizationMailAttachmentController::class, 'download']
+)->whereNumber('recipient')->whereNumber('index')->name('mail.attachments.download');

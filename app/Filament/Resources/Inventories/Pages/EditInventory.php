@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Inventories\Pages;
 
 use App\Filament\Resources\Inventories\InventoryResource;
+use App\Models\User;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
@@ -17,5 +18,12 @@ class EditInventory extends EditRecord
             ViewAction::make(),
             DeleteAction::make(),
         ];
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $data['owner_type'] = User::class;
+
+        return $data;
     }
 }

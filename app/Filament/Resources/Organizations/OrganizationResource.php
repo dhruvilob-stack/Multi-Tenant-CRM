@@ -30,7 +30,7 @@ class OrganizationResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
+        return auth()->user()?->role === UserRole::SUPER_ADMIN;
     }
 
     public static function canViewAny(): bool
@@ -102,7 +102,6 @@ class OrganizationResource extends Resource
         ];
     }
 }
-
 
 
 

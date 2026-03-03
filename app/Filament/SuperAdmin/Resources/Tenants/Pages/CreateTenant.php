@@ -11,6 +11,7 @@ use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class CreateTenant extends CreateRecord
 {
@@ -18,21 +19,29 @@ class CreateTenant extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
+        $baseSlug = Str::slug((string) $data['name']);
+        $slug = $baseSlug;
+        $suffix = 1;
+
+        while (Organization::query()->where('slug', $slug)->exists()) {
+            $slug = "{$baseSlug}-{$suffix}";
+            $suffix++;
+        }
+
         $organization = Organization::query()->create([
             'name' => (string) $data['name'],
-            'slug' => (string) $data['slug'],
-            'email' => (string) ($data['email'] ?: $data['admin_email']),
-            'phone' => (string) ($data['phone'] ?? ''),
+            'slug' => $slug,
+            'email' => (string) $data['email'],
             'status' => (string) ($data['status'] ?? 'active'),
-            'address' => (string) ($data['address'] ?? ''),
         ]);
 
         app(TenantSyncService::class)->ensureForOrganization($organization);
 
-        $orgAdmin = User::query()->create([
-            'name' => (string) $data['admin_name'],
-            'email' => (string) $data['admin_email'],
-            'password' => Hash::make((string) $data['admin_password']),
+        $orgAdmin = User::query()->updateOrCreate([
+            'email' => (string) $data['email'],
+        ], [
+            'name' => (string) $data['name'],
+            'password' => Hash::make((string) $data['password']),
             'role' => UserRole::ORG_ADMIN,
             'organization_id' => (int) $organization->id,
             'status' => 'active',

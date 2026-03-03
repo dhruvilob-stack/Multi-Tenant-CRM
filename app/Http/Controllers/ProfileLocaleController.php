@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
@@ -23,6 +24,9 @@ class ProfileLocaleController extends Controller
         if ($user) {
             $user->update(['locale' => $locale]);
         }
+
+        App::setLocale($locale);
+        $request->session()->put('locale', $locale);
 
         return redirect()->back()->with('status', __('profile.locale_updated'));
     }

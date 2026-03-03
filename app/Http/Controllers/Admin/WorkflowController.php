@@ -11,6 +11,7 @@ use App\Models\Quotation;
 use App\Models\User;
 use App\Services\InvitationService;
 use App\Services\InvoiceWorkflowService;
+use App\Services\OrderWorkflowService;
 use App\Services\QuotationWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -141,27 +142,41 @@ class WorkflowController extends Controller
         return response()->json(['message' => 'Credit invoice created']);
     }
 
-    public function confirmOrder(int $id): JsonResponse
+    public function confirmOrder(int $id, OrderWorkflowService $service): JsonResponse
     {
-        $order = Order::query()->findOrFail($id);
-        $order->update(['status' => 'confirmed']);
+        $service->confirm(Order::query()->findOrFail($id));
 
         return response()->json(['message' => 'Order confirmed']);
     }
 
-    public function shipOrder(int $id): JsonResponse
+    public function processOrder(int $id, OrderWorkflowService $service): JsonResponse
     {
-        $order = Order::query()->findOrFail($id);
-        $order->update(['status' => 'shipped']);
+        $service->process(Order::query()->findOrFail($id));
+
+        return response()->json(['message' => 'Order moved to processing']);
+    }
+
+    public function shipOrder(int $id, OrderWorkflowService $service): JsonResponse
+    {
+        $service->ship(Order::query()->findOrFail($id));
 
         return response()->json(['message' => 'Order shipped']);
     }
 
-    public function deliverOrder(int $id): JsonResponse
+    public function deliverOrder(int $id, OrderWorkflowService $service): JsonResponse
     {
-        $order = Order::query()->findOrFail($id);
-        $order->update(['status' => 'delivered']);
+        $service->deliver(Order::query()->findOrFail($id));
 
         return response()->json(['message' => 'Order delivered']);
+    }
+
+    public function generateQuotationAndInvoiceForOrder(int $id, OrderWorkflowService $service): JsonResponse
+    {
+        $invoice = $service->markPaidAndGenerateInvoice(Order::query()->findOrFail($id));
+
+        return response()->json([
+            'message' => 'Payment captured and invoice generated for order',
+            'invoice_id' => $invoice->id,
+        ]);
     }
 }

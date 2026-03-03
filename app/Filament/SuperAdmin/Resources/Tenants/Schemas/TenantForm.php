@@ -3,7 +3,6 @@
 namespace App\Filament\SuperAdmin\Resources\Tenants\Schemas;
 
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
 use Illuminate\Validation\Rules\Password;
@@ -20,31 +19,30 @@ class TenantForm
                     ->disabled()
                     ->dehydrated(false)
                     ->helperText('Auto-generated and linked after saving organization.'),
-                TextInput::make('name')->required()->maxLength(255),
-                TextInput::make('slug')->required()->maxLength(255)->unique(ignoreRecord: true),
-                TextInput::make('email')->email(),
-                TextInput::make('phone'),
-                TextInput::make('admin_name')
-                    ->label('Organization Admin Name')
-                    ->required(fn (string $operation): bool => $operation === 'create')
-                    ->visible(fn (string $operation): bool => $operation === 'create')
+                TextInput::make('name')
+                    ->label('Organization Name')
+                    ->required()
                     ->maxLength(255),
-                TextInput::make('admin_email')
-                    ->label('Organization Admin Email')
+                TextInput::make('slug')
+                    ->required(fn (string $operation): bool => $operation !== 'create')
+                    ->visible(fn (string $operation): bool => $operation !== 'create')
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
+                TextInput::make('email')
+                    ->label('Organization Email')
                     ->email()
-                    ->required(fn (string $operation): bool => $operation === 'create')
-                    ->visible(fn (string $operation): bool => $operation === 'create')
-                    ->unique('users', 'email'),
-                TextInput::make('admin_password')
-                    ->label('Organization Admin Password')
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('password')
+                    ->label('Password')
                     ->password()
                     ->revealable()
                     ->rule(Password::min(8))
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->visible(fn (string $operation): bool => $operation === 'create')
-                    ->same('admin_password_confirmation'),
-                TextInput::make('admin_password_confirmation')
-                    ->label('Confirm Admin Password')
+                    ->same('password_confirmation'),
+                TextInput::make('password_confirmation')
+                    ->label('Confirm Password')
                     ->password()
                     ->revealable()
                     ->required(fn (string $operation): bool => $operation === 'create')
@@ -56,8 +54,8 @@ class TenantForm
                         'inactive' => 'Inactive',
                         'suspended' => 'Suspended',
                     ])
-                    ->default('active'),
-                Textarea::make('address')->columnSpanFull(),
+                    ->default('active')
+                    ->visible(fn (string $operation): bool => $operation !== 'create'),
             ])
             ->columns(2);
     }

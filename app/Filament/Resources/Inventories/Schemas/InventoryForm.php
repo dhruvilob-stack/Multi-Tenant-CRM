@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Inventories\Schemas;
 
 use App\Models\Product;
 use App\Models\User;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -25,7 +26,9 @@ class InventoryForm
                     ->searchable()
                     ->preload()
                     ->required(),
-                TextInput::make('owner_type')->default('App\\Models\\User')->required(),
+                Hidden::make('owner_type')
+                    ->default(User::class)
+                    ->dehydrated(true),
                 TextInput::make('quantity_available')->numeric()->default(0)->required(),
                 TextInput::make('quantity_reserved')->numeric()->default(0)->required(),
                 TextInput::make('warehouse_location'),

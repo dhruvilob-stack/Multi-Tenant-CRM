@@ -6,8 +6,10 @@ use App\Models\AuditLog;
 use App\Models\ResourceNotification;
 use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Schema;
 use App\Events\ResourceNotificationCreated;
 use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Contracts\Support\Arrayable;
@@ -19,8 +21,7 @@ class AuditNotificationService
     public function log(Model $model, string $event, array $before = [], array $after = []): AuditLog
     {
         $modelKey = (string) $model->getKey();
-
-        return AuditLog::query()->create([
+        $payload = [
             'auditable_type' => $model::class,
             'auditable_id' => $modelKey,
             'event' => $event,
@@ -29,7 +30,17 @@ class AuditNotificationService
             'before' => $before ? json_encode($before) : null,
             'after' => $after ? json_encode($after) : null,
             'ip_address' => Request::ip(),
-        ]);
+        ];
+
+        if (! $this->canPersistPolymorphicKey('audit_logs', 'auditable_id', $modelKey)) {
+            return new AuditLog($payload);
+        }
+
+        try {
+            return AuditLog::query()->create($payload);
+        } catch (QueryException) {
+            return new AuditLog($payload);
+        }
     }
 
     /**
@@ -51,6 +62,11 @@ class AuditNotificationService
         $targetList = $this->normalizeRecipients(
             is_callable($recipients) ? $recipients($model) : $recipients
         );
+        $canPersistResourceNotification = $this->canPersistPolymorphicKey(
+            'resource_notifications',
+            'notificationable_id',
+            $modelKey
+        );
 
         foreach ($targetList as $recipient) {
             if (! $recipient || ! isset($recipient->id)) {
@@ -61,15 +77,25 @@ class AuditNotificationService
                 ? (string) $redirectUrl($recipient, $model)
                 : $redirectUrl;
 
-            $rows[] = $notification = ResourceNotification::query()->create([
-                'notificationable_type' => $model::class,
-                'notificationable_id' => $modelKey,
-                'recipient_id' => $recipient->id,
-                'recipient_role' => $recipient->role,
-                'action' => $action,
-                'message' => $message,
-                'redirect_url' => $resolvedRedirectUrl,
-            ]);
+            $notification = null;
+
+            if ($canPersistResourceNotification) {
+                try {
+                    $notification = ResourceNotification::query()->create([
+                        'notificationable_type' => $model::class,
+                        'notificationable_id' => $modelKey,
+                        'recipient_id' => $recipient->id,
+                        'recipient_role' => $recipient->role,
+                        'action' => $action,
+                        'message' => $message,
+                        'redirect_url' => $resolvedRedirectUrl,
+                    ]);
+
+                    $rows[] = $notification;
+                } catch (QueryException) {
+                    $notification = null;
+                }
+            }
 
             $filamentNotification = FilamentNotification::make()
                 ->title($message)
@@ -91,7 +117,9 @@ class AuditNotificationService
 
             $filamentNotification->broadcast($recipient);
 
-            ResourceNotificationCreated::dispatch($notification);
+            if ($notification) {
+                ResourceNotificationCreated::dispatch($notification);
+            }
         }
 
         return $rows;
@@ -125,5 +153,16 @@ class AuditNotificationService
         }
 
         return [];
+    }
+
+    protected function canPersistPolymorphicKey(string $table, string $column, string $key): bool
+    {
+        if (is_numeric($key)) {
+            return true;
+        }
+
+        $type = Schema::getColumnType($table, $column);
+
+        return in_array($type, ['string', 'varchar', 'text', 'char'], true);
     }
 }

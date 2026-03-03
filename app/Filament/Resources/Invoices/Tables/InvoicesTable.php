@@ -33,6 +33,11 @@ class InvoicesTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                Action::make('downloadPdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->url(fn (Invoice $record): string => route('admin.invoices.pdf', ['id' => $record->id]))
+                    ->openUrlInNewTab(),
                 Action::make('approve')
                     ->action(function (Invoice $record): void {
                         app(InvoiceWorkflowService::class)->approve($record);

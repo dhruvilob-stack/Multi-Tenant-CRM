@@ -3,7 +3,9 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Concerns\HasDashboardArrangement;
+use App\Filament\Widgets\CustomersRevenueBarChart;
 use App\Filament\Widgets\PanelResourcesOverview;
+use App\Filament\Widgets\RevenueTrendChart;
 use Filament\Pages\Dashboard as BaseDashboard;
 
 class Dashboard extends BaseDashboard
@@ -17,6 +19,8 @@ class Dashboard extends BaseDashboard
     {
         return [
             PanelResourcesOverview::class,
+            RevenueTrendChart::class,
+            CustomersRevenueBarChart::class,
         ];
     }
 

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\ResourceNotification;
+use App\Models\OrganizationMailRecipient;
 use App\Models\CustomRole;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,6 +36,9 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     protected $fillable = [
         'organization_id',
         'parent_id',
+        'first_name',
+        'last_name',
+        'profile_photo',
         'name',
         'email',
         'password',
@@ -103,6 +107,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     public function resourceNotifications(): HasMany
     {
         return $this->hasMany(ResourceNotification::class, 'recipient_id');
+    }
+
+    public function mailRecipients(): HasMany
+    {
+        return $this->hasMany(OrganizationMailRecipient::class, 'recipient_id');
     }
 
     public function isRole(string $role): bool

@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use DateTimeInterface;
 use RuntimeException;
 
 class CrmDataExchangeService
@@ -234,7 +235,13 @@ class CrmDataExchangeService
             if ($headers !== []) {
                 fputcsv($handle, $headers);
                 foreach ($records as $record) {
-                    fputcsv($handle, array_map(fn ($h) => $record[$h] ?? null, $headers));
+                    fputcsv(
+                        $handle,
+                        array_map(
+                            fn ($h) => $this->normalizeExportValue($record[$h] ?? null),
+                            $headers
+                        )
+                    );
                 }
             }
             fclose($handle);
@@ -835,7 +842,7 @@ class CrmDataExchangeService
                     continue;
                 }
 
-                $escaped = str_replace("'", "''", (string) $value);
+                $escaped = str_replace("'", "''", (string) $this->normalizeExportValue($value));
                 $values[] = "'{$escaped}'";
             }
 
@@ -843,5 +850,30 @@ class CrmDataExchangeService
         }
 
         return implode(PHP_EOL, $lines) . PHP_EOL;
+    }
+
+    protected function normalizeExportValue(mixed $value): string|int|float|null
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return $value;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        if (is_array($value) || is_object($value)) {
+            return (string) json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        return (string) $value;
     }
 }

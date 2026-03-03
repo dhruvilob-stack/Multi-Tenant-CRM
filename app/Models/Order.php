@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends BaseModel
 {
@@ -13,14 +14,22 @@ class Order extends BaseModel
         'vendor_id',
         'invoice_id',
         'status',
+        'payment_method',
+        'payment_status',
         'total_amount',
         'notes',
+        'billing_address',
+        'shipping_address',
+        'paid_at',
     ];
 
     protected function casts(): array
     {
         return [
             'total_amount' => 'decimal:2',
+            'billing_address' => 'array',
+            'shipping_address' => 'array',
+            'paid_at' => 'datetime',
         ];
     }
 
@@ -37,5 +46,10 @@ class Order extends BaseModel
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }
