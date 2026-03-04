@@ -137,6 +137,7 @@
             <td style="width: 42%; text-align: right;">
                 <div class="title">INVOICE</div>
                 <div><strong>No:</strong> {{ $invoice->invoice_number }}</div>
+                <div><strong>Order #:</strong> {{ $invoice->order?->order_number ?? '-' }}</div>
                 <div><strong>Date:</strong> {{ optional($invoice->invoice_date)->format('Y-m-d') }}</div>
                 <div><strong>Due:</strong> {{ optional($invoice->due_date)->format('Y-m-d') }}</div>
                 <div><strong>Status:</strong> {{ strtoupper((string) $invoice->status) }}</div>
@@ -221,6 +222,10 @@
         <tr>
             <th>Payment Method</th>
             <td>{{ strtoupper(str_replace('_', ' ', (string) $invoice->payment_method)) ?: '-' }}</td>
+        </tr>
+        <tr>
+            <th>Payment Ref</th>
+            <td>{{ $invoice->order?->payment_reference_number ?: '-' }}</td>
         </tr>
         <tr>
             <th>Pre-tax Total</th>

@@ -273,4 +273,50 @@ class OrganizationMailService
             'attach_sales_report' => true,
         ]);
     }
+
+    public function sendDeliveredInvoiceToCustomer(Order $order, Invoice $invoice): void
+    {
+        $order->loadMissing('consumer', 'vendor.organization', 'items.product');
+        $sender = $order->vendor;
+        $consumer = $order->consumer;
+
+        if (! $sender || ! $consumer) {
+            return;
+        }
+
+        $rows = $order->items
+            ->map(function ($item): string {
+                $name = e((string) $item->item_name);
+                $qty = number_format((float) $item->qty, 3);
+                $unit = number_format((float) $item->unit_price, 2);
+                $total = number_format((float) $item->line_total, 2);
+
+                return "<tr><td style='padding:6px;border:1px solid #e5e7eb'>{$name}</td><td style='padding:6px;border:1px solid #e5e7eb'>{$qty}</td><td style='padding:6px;border:1px solid #e5e7eb'>{$unit}</td><td style='padding:6px;border:1px solid #e5e7eb'>{$total}</td></tr>";
+            })
+            ->implode('');
+
+        $body = '<p>Hello '.e((string) $consumer->name).',</p>'
+            .'<p>Your order <strong>'.e((string) $order->order_number).'</strong> has been delivered successfully.</p>'
+            .'<p>Invoice <strong>'.e((string) $invoice->invoice_number).'</strong> is attached as PDF.</p>'
+            .'<div style="margin:12px 0"><strong>Payment Method:</strong> '.e((string) $order->payment_method).'<br>'
+            .'<strong>Payment Reference:</strong> '.e((string) ($order->payment_reference_number ?: '-')).'<br>'
+            .'<strong>Payment Status:</strong> '.e((string) $order->payment_status).'<br>'
+            .'<strong>Total Amount:</strong> '.number_format((float) ($order->total_amount_billed ?? $order->total_amount ?? 0), 2).' '.e((string) ($order->currency ?: 'USD')).'</div>'
+            .'<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;padding:6px;border:1px solid #e5e7eb">Product</th><th style="text-align:left;padding:6px;border:1px solid #e5e7eb">Qty</th><th style="text-align:left;padding:6px;border:1px solid #e5e7eb">Unit Price</th><th style="text-align:left;padding:6px;border:1px solid #e5e7eb">Line Total</th></tr></thead><tbody>'.$rows.'</tbody></table>'
+            .'<p style="margin-top:12px">Thank you for shopping with us.</p>';
+
+        $this->send($sender, [
+            'from_email' => $sender->email,
+            'to' => [$consumer->email],
+            'cc' => [],
+            'bcc' => [],
+            'subject' => "Order {$order->order_number} delivered - Invoice {$invoice->invoice_number}",
+            'body' => $body,
+            'template_key' => 'delivered_invoice',
+            'order_id' => $order->id,
+            'invoice_id' => $invoice->id,
+            'attach_invoice_pdf' => true,
+            'attach_sales_report' => false,
+        ]);
+    }
 }

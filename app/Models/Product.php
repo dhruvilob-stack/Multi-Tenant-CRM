@@ -28,6 +28,7 @@ class Product extends BaseModel
         'cost',
         'barcode',
         'qty',
+        'purchased_qty',
         'security_stock',
         'is_visible',
         'featured',
@@ -46,6 +47,7 @@ class Product extends BaseModel
             'old_price' => 'decimal:2',
             'cost' => 'decimal:2',
             'qty' => 'integer',
+            'purchased_qty' => 'decimal:3',
             'security_stock' => 'integer',
             'is_visible' => 'boolean',
             'featured' => 'boolean',
@@ -68,6 +70,11 @@ class Product extends BaseModel
     public function inventoryRecords(): HasMany
     {
         return $this->hasMany(Inventory::class);
+    }
+
+    public function customerPurchases(): HasMany
+    {
+        return $this->hasMany(ProductCustomerPurchase::class);
     }
 
     public function comments(): MorphMany

@@ -74,6 +74,12 @@ class ProductsTable
                     ->sortable()
                     ->toggleable(),
 
+                TextColumn::make('purchased_qty')
+                    ->label('Purchased Qty')
+                    ->numeric(decimalPlaces: 3)
+                    ->sortable()
+                    ->toggleable(),
+
                 TextColumn::make('security_stock')
                     ->searchable()
                     ->sortable()

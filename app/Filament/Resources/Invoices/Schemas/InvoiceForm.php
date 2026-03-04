@@ -39,7 +39,6 @@ class InvoiceForm
                                 'auto_created' => 'Auto Created',
                                 'created' => 'Created',
                                 'cancelled' => 'Cancel',
-                                'approved' => 'Approved',
                                 'sent' => 'Sent',
                                 'credit_invoice' => 'Credit Invoice',
                                 'paid' => 'Paid',
@@ -159,8 +158,6 @@ class InvoiceForm
                             ->default('add'),
                         TextInput::make('adjustment_amount')->numeric()->default(0),
                         TextInput::make('grand_total')->numeric()->default(0),
-                        TextInput::make('received_amount')->label('Received')->numeric()->default(0),
-                        TextInput::make('balance')->numeric()->default(0),
                     ])
                     ->columns(3),
             ]);

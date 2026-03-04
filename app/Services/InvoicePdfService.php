@@ -37,29 +37,142 @@ class InvoicePdfService
             'organizationName' => $invoice->quotation?->vendor?->organization?->name,
         ])->render());
 
-        $process = new Process([
-            'libreoffice',
-            '--headless',
-            '--convert-to',
-            'pdf',
-            '--outdir',
-            $outputDir,
-            $htmlPath,
-        ]);
+        $errors = [];
 
-        $process->setTimeout(120);
-        $process->run();
+        if (! $this->tryGenerateWithLibreOffice($htmlPath, $pdfPath, $outputDir, $errors)
+            && ! $this->tryGenerateWithHeadlessBrowser($htmlPath, $pdfPath, $errors)) {
+            @unlink($htmlPath);
+            $details = $errors === [] ? 'No PDF engine available.' : implode(' | ', $errors);
+
+            throw new RuntimeException('Unable to generate invoice PDF. '.$details);
+        }
 
         @unlink($htmlPath);
-
-        if (! $process->isSuccessful() || ! file_exists($pdfPath)) {
-            throw new RuntimeException('Unable to generate invoice PDF.');
-        }
 
         return [
             'path' => $pdfPath,
             'filename' => ($invoice->invoice_number ?: 'invoice').'.pdf',
         ];
+    }
+
+    /**
+     * @param array<int, string> $errors
+     */
+    private function tryGenerateWithLibreOffice(string $htmlPath, string $pdfPath, string $outputDir, array &$errors): bool
+    {
+        $binaries = [
+            'libreoffice',
+            'soffice',
+            'C:\\Program Files\\LibreOffice\\program\\soffice.exe',
+            'C:\\Program Files\\LibreOffice\\program\\soffice.com',
+        ];
+
+        foreach ($binaries as $binary) {
+            $process = new Process([
+                $binary,
+                '--headless',
+                '--convert-to',
+                'pdf',
+                '--outdir',
+                $outputDir,
+                $htmlPath,
+            ]);
+            $process->setTimeout(120);
+            $process->run();
+
+            if ($process->isSuccessful() && file_exists($pdfPath)) {
+                return true;
+            }
+
+            $error = trim($process->getErrorOutput().' '.$process->getOutput());
+            if ($error !== '') {
+                $errors[] = "LibreOffice({$binary}): ".preg_replace('/\s+/', ' ', $error);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<int, string> $errors
+     */
+    private function tryGenerateWithHeadlessBrowser(string $htmlPath, string $pdfPath, array &$errors): bool
+    {
+        $binaries = [
+            'chrome',
+            'chromium',
+            'msedge',
+            'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+            'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+            'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+        ];
+
+        $fileUrl = 'file:///'.str_replace('\\', '/', realpath($htmlPath) ?: $htmlPath);
+
+        foreach ($binaries as $binary) {
+            $profileDir = storage_path('app/tmp/browser-profile-'.Str::random(8));
+            if (! is_dir($profileDir)) {
+                @mkdir($profileDir, 0775, true);
+            }
+
+            $process = new Process([
+                $binary,
+                '--headless=new',
+                '--disable-gpu',
+                '--disable-crash-reporter',
+                '--no-first-run',
+                '--no-default-browser-check',
+                '--allow-file-access-from-files',
+                '--user-data-dir='.$profileDir,
+                '--print-to-pdf='.$pdfPath,
+                $fileUrl,
+            ]);
+            $process->setTimeout(120);
+            $process->run();
+
+            if ($process->isSuccessful() && file_exists($pdfPath)) {
+                $this->deleteDirectory($profileDir);
+                return true;
+            }
+
+            $error = trim($process->getErrorOutput().' '.$process->getOutput());
+            if ($error !== '') {
+                $errors[] = "Browser({$binary}): ".preg_replace('/\s+/', ' ', $error);
+            }
+
+            $this->deleteDirectory($profileDir);
+        }
+
+        return false;
+    }
+
+    private function deleteDirectory(string $path): void
+    {
+        if (! is_dir($path)) {
+            return;
+        }
+
+        $items = @scandir($path);
+        if (! is_array($items)) {
+            @rmdir($path);
+            return;
+        }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $full = $path.DIRECTORY_SEPARATOR.$item;
+            if (is_dir($full)) {
+                $this->deleteDirectory($full);
+            } else {
+                @unlink($full);
+            }
+        }
+
+        @rmdir($path);
     }
 
     private function resolveLogoDataUri(Invoice $invoice): ?string

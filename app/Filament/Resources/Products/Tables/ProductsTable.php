@@ -8,7 +8,6 @@ use App\Models\ProductChangeRequest;
 use App\Filament\Support\ResourceDataExchange;
 use App\Support\UserRole;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -29,6 +28,8 @@ class ProductsTable
                 TextColumn::make('manufacturer.name')->label('Manufacturer'),
                 TextColumn::make('category.name')->label('Category'),
                 TextColumn::make('base_price')->money('USD')->sortable(),
+                TextColumn::make('qty')->label('Stock Qty')->sortable(),
+                TextColumn::make('purchased_qty')->label('Purchased Qty')->numeric(decimalPlaces: 3)->sortable(),
                 TextColumn::make('status')->badge(),
                 IconColumn::make('available_for_distributor')->boolean(),
             ])
@@ -60,12 +61,12 @@ class ProductsTable
                         Notification::make()->success()->title('Change request submitted to organization admin')->send();
                     }),
             ])
+            ->groupedBulkActions([
+                DeleteBulkAction::make()
+                    ->visible(fn (): bool => in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
+            ])
             ->toolbarActions([
                 ...ResourceDataExchange::toolbarActions('products'),
-                BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->visible(fn (): bool => in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
-                ]),
             ]);
     }
 }

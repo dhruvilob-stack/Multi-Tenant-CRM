@@ -14,9 +14,12 @@ class Order extends BaseModel
         'vendor_id',
         'invoice_id',
         'status',
+        'currency',
         'payment_method',
+        'payment_reference_number',
         'payment_status',
         'total_amount',
+        'total_amount_billed',
         'notes',
         'billing_address',
         'shipping_address',
@@ -27,6 +30,7 @@ class Order extends BaseModel
     {
         return [
             'total_amount' => 'decimal:2',
+            'total_amount_billed' => 'decimal:2',
             'billing_address' => 'array',
             'shipping_address' => 'array',
             'paid_at' => 'datetime',
