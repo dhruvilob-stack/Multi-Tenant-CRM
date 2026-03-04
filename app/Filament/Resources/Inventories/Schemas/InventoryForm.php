@@ -4,25 +4,46 @@ namespace App\Filament\Resources\Inventories\Schemas;
 
 use App\Models\Product;
 use App\Models\User;
+use App\Support\AccessMatrix;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 class InventoryForm
 {
     public static function configure(Schema $schema): Schema
     {
+        $authUser = auth()->user();
+
         return $schema
             ->components([
                 Select::make('product_id')
-                    ->options(Product::query()->pluck('name', 'id'))
+                    ->label('Product (Optional)')
+                    ->relationship(
+                        'product',
+                        'name',
+                        fn (Builder $query) => $query->when(
+                            $authUser && ! AccessMatrix::isSuper($authUser),
+                            fn (Builder $scoped) => $scoped->whereHas(
+                                'manufacturer',
+                                fn (Builder $manufacturer) => $manufacturer->where('organization_id', $authUser->organization_id),
+                            ),
+                        ),
+                    )
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->nullable()
+                    ->helperText('Create inventory first without product. Later map it from Shop > Products using "Reference Inventory Record".'),
                 Select::make('owner_id')
                     ->label('Owner')
-                    ->options(User::query()->pluck('name', 'id'))
+                    ->options(
+                        AccessMatrix::scopeOrganization(
+                            User::query()->orderBy('name'),
+                            $authUser,
+                        )->pluck('name', 'id'),
+                    )
                     ->searchable()
                     ->preload()
                     ->required(),

@@ -15,7 +15,10 @@ class InventoriesTable
     {
         return $table
             ->columns([
-                TextColumn::make('product.name')->label('Product')->searchable(),
+                TextColumn::make('product.name')
+                    ->label('Product')
+                    ->searchable()
+                    ->placeholder('Unmapped'),
                 TextColumn::make('sku')->label('SKU')->searchable(),
                 TextColumn::make('barcode')->searchable()->toggleable(),
                 TextColumn::make('owner.name')->label('Owner'),

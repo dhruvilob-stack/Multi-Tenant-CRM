@@ -11,6 +11,7 @@ use App\Filament\Resources\Inventories\Schemas\InventoryForm;
 use App\Filament\Resources\Inventories\Schemas\InventoryInfolist;
 use App\Filament\Resources\Inventories\Tables\InventoriesTable;
 use App\Models\Inventory;
+use App\Models\User;
 use App\Support\AccessMatrix;
 use App\Support\UserRole;
 use BackedEnum;
@@ -63,7 +64,20 @@ class InventoryResource extends Resource
             return $query;
         }
 
-        return $query->whereHas('product.manufacturer', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+        return $query->where(function (Builder $scoped) use ($user): void {
+            $scoped
+                ->whereHas('product.manufacturer', fn (Builder $q) => $q->where('organization_id', $user->organization_id))
+                ->orWhere(function (Builder $unmapped) use ($user): void {
+                    $unmapped
+                        ->whereNull('product_id')
+                        ->where('owner_type', User::class)
+                        ->whereHasMorph(
+                            'owner',
+                            [User::class],
+                            fn (Builder $owner) => $owner->where('organization_id', $user->organization_id),
+                        );
+                });
+        });
     }
 
     public static function form(Schema $schema): Schema
@@ -98,6 +112,3 @@ class InventoryResource extends Resource
         ];
     }
 }
-
-
-
