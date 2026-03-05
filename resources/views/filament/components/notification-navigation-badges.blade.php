@@ -89,11 +89,13 @@
 
                 const normalized = section.toLowerCase();
                 const parent = (parentSection || '').toLowerCase();
+                const isMailSection = normalized.startsWith('mail/');
+                const isInboxSection = normalized === 'mail/inbox-mail';
                 const count = Number(
                     counts[normalized] ??
-                    counts[parent] ??
+                    ((isMailSection && !isInboxSection) ? 0 : (counts[parent] ?? null)) ??
                     counts[singularize(normalized)] ??
-                    counts[singularize(parent)] ??
+                    ((isMailSection && !isInboxSection) ? 0 : (counts[singularize(parent)] ?? null)) ??
                     0
                 );
 

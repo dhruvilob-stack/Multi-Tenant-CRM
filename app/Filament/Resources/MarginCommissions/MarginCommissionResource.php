@@ -30,7 +30,7 @@ class MarginCommissionResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer'], true);
+        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor'], true);
     }
 
     public static function canViewAny(): bool
@@ -40,17 +40,17 @@ class MarginCommissionResource extends Resource
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
+        return auth()->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canEdit($record): bool
     {
-        return self::canCreate();
+        return auth()->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canDelete($record): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
+        return auth()->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function getEloquentQuery(): Builder
@@ -61,7 +61,15 @@ class MarginCommissionResource extends Resource
             return $query;
         }
 
-        return $query->whereHas('product.manufacturer', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+        return $query->where(function (Builder $scoped) use ($user): void {
+            $scoped
+                ->where('organization_id', $user->organization_id)
+                ->orWhere(function (Builder $legacy) use ($user): void {
+                    $legacy
+                        ->whereNull('organization_id')
+                        ->whereHas('product.manufacturer', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+                });
+        });
     }
 
     public static function form(Schema $schema): Schema
@@ -96,7 +104,5 @@ class MarginCommissionResource extends Resource
         ];
     }
 }
-
-
 
 

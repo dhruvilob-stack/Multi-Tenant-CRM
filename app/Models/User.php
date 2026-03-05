@@ -15,7 +15,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\ResourceNotification;
 use App\Models\OrganizationMailRecipient;
 use App\Models\CustomRole;
+use App\Models\CommissionPayout;
+use App\Models\PartnerWallet;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -112,6 +115,16 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     public function mailRecipients(): HasMany
     {
         return $this->hasMany(OrganizationMailRecipient::class, 'recipient_id');
+    }
+
+    public function commissionPayouts(): HasMany
+    {
+        return $this->hasMany(CommissionPayout::class);
+    }
+
+    public function partnerWallet(): HasOne
+    {
+        return $this->hasOne(PartnerWallet::class, 'user_id');
     }
 
     public function isRole(string $role): bool

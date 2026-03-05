@@ -155,6 +155,25 @@ class OrderWorkflowService
             ? Invoice::query()->findOrFail($order->invoice_id)
             : $this->markPaidAndGenerateInvoice($order, sendStatusMail: false);
 
+        // If an existing invoice was reused, make sure it is linked and paid before generating commissions.
+        $invoiceUpdates = [];
+        if (! $invoice->order_id) {
+            $invoiceUpdates['order_id'] = $order->id;
+        }
+
+        if (! in_array((string) $invoice->status, ['approved', 'paid'], true)) {
+            $invoiceUpdates['status'] = 'paid';
+            $invoiceUpdates['received_amount'] = (float) $invoice->grand_total;
+            $invoiceUpdates['balance'] = 0;
+        }
+
+        if ($invoiceUpdates !== []) {
+            $invoice->update($invoiceUpdates);
+            $invoice = $invoice->refresh();
+        }
+
+        app(CommissionService::class)->generateForInvoice($invoice->refresh());
+
         app(OrganizationMailService::class)->sendDeliveredInvoiceToCustomer($order->fresh(['consumer', 'vendor.organization']), $invoice->fresh());
 
         return $invoice->fresh();

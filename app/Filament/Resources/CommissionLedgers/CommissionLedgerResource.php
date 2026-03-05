@@ -11,6 +11,7 @@ use App\Filament\Resources\CommissionLedgers\Schemas\CommissionLedgerInfolist;
 use App\Filament\Resources\CommissionLedgers\Tables\CommissionLedgersTable;
 use App\Models\CommissionLedger;
 use App\Support\AccessMatrix;
+use App\Support\UserRole;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -29,27 +30,27 @@ class CommissionLedgerResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor'], true);
+        return in_array(auth()->user()?->role, ['super_admin', 'org_admin', 'manufacturer', 'distributor', 'vendor'], true);
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor'], true);
+        return in_array(auth()->user()?->role, ['super_admin', 'org_admin', 'manufacturer', 'distributor', 'vendor'], true);
     }
 
     public static function canCreate(): bool
     {
-        return false;
+        return auth()->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canEdit($record): bool
     {
-        return false;
+        return auth()->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canDelete($record): bool
     {
-        return false;
+        return auth()->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function getEloquentQuery(): Builder
@@ -95,7 +96,6 @@ class CommissionLedgerResource extends Resource
         ];
     }
 }
-
 
 
 

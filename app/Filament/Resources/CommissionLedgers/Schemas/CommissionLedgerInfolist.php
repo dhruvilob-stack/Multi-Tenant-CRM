@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\CommissionLedgers\Schemas;
 
 use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 class CommissionLedgerInfolist
@@ -11,18 +12,66 @@ class CommissionLedgerInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('invoice.invoice_number')->label('Invoice'),
-                TextEntry::make('product.name')->label('Product'),
-                TextEntry::make('fromUser.name')->label('From User'),
-                TextEntry::make('toUser.name')->label('To User'),
-                TextEntry::make('from_role')->badge(),
-                TextEntry::make('to_role')->badge(),
-                TextEntry::make('commission_type'),
-                TextEntry::make('commission_rate'),
-                TextEntry::make('basis_amount')->money('USD'),
-                TextEntry::make('commission_amount')->money('USD'),
-                TextEntry::make('status')->badge(),
-                TextEntry::make('created_at')->dateTime(),
-            ]);
+                Section::make('Commission Details')
+                    ->schema([
+                        TextEntry::make('invoice.invoice_number')
+                            ->label('Invoice')
+                            ->placeholder('-'),
+                        TextEntry::make('product.name')
+                            ->label('Product')
+                            ->placeholder('-'),
+                        TextEntry::make('commission_type')
+                            ->label('Commission Type')
+                            ->badge()
+                            ->color('info'),
+                        TextEntry::make('status')
+                            ->label('Status')
+                            ->badge(),
+                    ])
+                    ->columns(2),
+                Section::make('Commission Parties')
+                    ->schema([
+                        TextEntry::make('fromUser.name')
+                            ->label('From User')
+                            ->placeholder('-'),
+                        TextEntry::make('toUser.name')
+                            ->label('To User')
+                            ->placeholder('-'),
+                        TextEntry::make('from_role')
+                            ->label('From Role')
+                            ->badge()
+                            ->color('primary'),
+                        TextEntry::make('to_role')
+                            ->label('To Role')
+                            ->badge()
+                            ->color('primary'),
+                    ])
+                    ->columns(2),
+                Section::make('Commission Amount')
+                    ->schema([
+                        TextEntry::make('basis_amount')
+                            ->label('Basis Amount')
+                            ->money('USD'),
+                        TextEntry::make('commission_rate')
+                            ->label('Commission Rate')
+                            ->suffix('%'),
+                        TextEntry::make('commission_amount')
+                            ->label('Commission Amount')
+                            ->money('USD')
+                            ->weight('bold'),
+                    ])
+                    ->columns(3),
+                Section::make('Timestamps')
+                    ->schema([
+                        TextEntry::make('created_at')
+                            ->label('Created At')
+                            ->dateTime(),
+                        TextEntry::make('updated_at')
+                            ->label('Updated At')
+                            ->dateTime(),
+                    ])
+                    ->columns(2),
+            ])
+            ->columns(1);
     }
 }

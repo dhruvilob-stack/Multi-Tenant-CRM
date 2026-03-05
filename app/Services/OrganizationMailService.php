@@ -92,6 +92,22 @@ class OrganizationMailService
             }
         }
 
+        // Gmail-like behavior: sender also keeps a copy in inbox/thread view.
+        $senderAlreadyRecipient = OrganizationMailRecipient::query()
+            ->where('mail_id', $mail->id)
+            ->where('recipient_id', $sender->id)
+            ->exists();
+
+        if (! $senderAlreadyRecipient) {
+            OrganizationMailRecipient::query()->create([
+                'mail_id' => $mail->id,
+                'recipient_id' => $sender->id,
+                'recipient_email' => (string) $sender->email,
+                'recipient_type' => 'to',
+                'read_at' => now(),
+            ]);
+        }
+
         Mail::to($to)
             ->cc($cc)
             ->bcc($bcc)

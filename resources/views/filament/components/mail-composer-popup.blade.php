@@ -101,6 +101,26 @@
             launcher.classList.toggle('hidden', !minimized);
         };
 
+        const dispatchComposerPrefill = (payload = {}) => {
+            if (!payload || (!payload.to && !payload.subject && !payload.body)) {
+                return;
+            }
+
+            const send = () => {
+                if (!window.Livewire?.dispatch) return;
+
+                if (window.Livewire.dispatchTo) {
+                    window.Livewire.dispatchTo('mail-composer-panel', 'mail-compose-prefill', payload);
+                }
+
+                window.Livewire.dispatch('mail-compose-prefill', payload);
+            };
+
+            // Retry once because the composer can be opening right when reply is clicked.
+            send();
+            setTimeout(send, 120);
+        };
+
         const openComposer = (payload = {}) => {
             setOpen(true);
             setMinimized(false);
@@ -111,9 +131,7 @@
                     window.Livewire.dispatch('mail-compose-reset');
                 }
 
-                if (payload && (payload.to || payload.subject || payload.body)) {
-                    window.Livewire.dispatch('mail-compose-prefill', payload);
-                }
+                dispatchComposerPrefill(payload);
             }
         };
 
@@ -198,6 +216,8 @@
 
         window.addEventListener('open-mail-composer', (e) => openComposer(normalizeDetail(e.detail)));
         document.addEventListener('open-mail-composer', (e) => openComposer(normalizeDetail(e.detail)));
+        window.addEventListener('mail-compose-sent', () => closeComposer());
+        document.addEventListener('mail-compose-sent', () => closeComposer());
         document.addEventListener('DOMContentLoaded', sync);
         document.addEventListener('livewire:navigated', sync);
     })();

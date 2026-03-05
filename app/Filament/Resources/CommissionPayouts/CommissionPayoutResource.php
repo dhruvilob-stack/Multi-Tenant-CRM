@@ -37,6 +37,21 @@ class CommissionPayoutResource extends Resource
         return auth()->user()?->role === 'org_admin';
     }
 
+    public static function canCreate(): bool
+    {
+        return auth()->user()?->role === 'org_admin';
+    }
+
+    public static function canEdit($record): bool
+    {
+        return auth()->user()?->role === 'org_admin';
+    }
+
+    public static function canDelete($record): bool
+    {
+        return auth()->user()?->role === 'org_admin';
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
@@ -45,7 +60,15 @@ class CommissionPayoutResource extends Resource
             return $query;
         }
 
-        return $query->whereHas('user', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+        return $query->where(function (Builder $scoped) use ($user): void {
+            $scoped
+                ->where('organization_id', $user->organization_id)
+                ->orWhere(function (Builder $legacy) use ($user): void {
+                    $legacy
+                        ->whereNull('organization_id')
+                        ->whereHas('user', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+                });
+        });
     }
 
     public static function form(Schema $schema): Schema
@@ -80,7 +103,6 @@ class CommissionPayoutResource extends Resource
         ];
     }
 }
-
 
 
 

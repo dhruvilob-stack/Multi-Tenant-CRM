@@ -38,6 +38,88 @@
 
         let currentPayload = null;
 
+        const linkifyAndPrepareHtml = (input) => {
+            const source = String(input || '');
+            const hasHtml = /<[^>]+>/.test(source);
+
+            const template = document.createElement('template');
+
+            if (hasHtml) {
+                template.innerHTML = source;
+            } else {
+                const escaped = source
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+
+                template.innerHTML = escaped.replace(/\n/g, '<br>');
+            }
+
+            const urlRegex = /((?:https?:\/\/|www\.)[^\s<]+)/gi;
+
+            const walk = (node) => {
+                if (!node) return;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent || '';
+                    if (!urlRegex.test(text)) {
+                        urlRegex.lastIndex = 0;
+                        return;
+                    }
+                    urlRegex.lastIndex = 0;
+
+                    const fragment = document.createDocumentFragment();
+                    let last = 0;
+                    let match;
+
+                    while ((match = urlRegex.exec(text)) !== null) {
+                        const url = match[0];
+                        const start = match.index;
+                        const end = start + url.length;
+
+                        if (start > last) {
+                            fragment.appendChild(document.createTextNode(text.slice(last, start)));
+                        }
+
+                        const link = document.createElement('a');
+                        link.href = /^www\./i.test(url) ? `https://${url}` : url;
+                        link.textContent = url;
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
+                        fragment.appendChild(link);
+                        last = end;
+                    }
+
+                    if (last < text.length) {
+                        fragment.appendChild(document.createTextNode(text.slice(last)));
+                    }
+
+                    node.parentNode?.replaceChild(fragment, node);
+                    return;
+                }
+
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const tagName = (node.tagName || '').toUpperCase();
+                    if (tagName === 'A' || tagName === 'SCRIPT' || tagName === 'STYLE') {
+                        return;
+                    }
+
+                    Array.from(node.childNodes).forEach(walk);
+                }
+            };
+
+            Array.from(template.content.childNodes).forEach(walk);
+
+            template.content.querySelectorAll('a[href]').forEach((anchor) => {
+                anchor.setAttribute('target', '_blank');
+                anchor.setAttribute('rel', 'noopener noreferrer');
+                anchor.classList.add('text-primary-600', 'underline');
+                anchor.style.cursor = 'pointer';
+            });
+
+            return template.innerHTML;
+        };
+
         const hide = () => {
             root.classList.add('hidden');
             currentPayload = null;
@@ -49,9 +131,22 @@
             nodes.from.textContent = payload.from || '-';
             nodes.to.textContent = payload.to || '-';
             nodes.sentAt.textContent = payload.sent_at || '';
-            nodes.body.innerHTML = payload.body || '';
+            nodes.body.innerHTML = linkifyAndPrepareHtml(payload.body || '');
             root.classList.remove('hidden');
         };
+
+        nodes.body?.addEventListener('click', (event) => {
+            const anchor = event.target?.closest?.('a[href]');
+            if (!anchor) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            const href = anchor.getAttribute('href');
+            if (!href) return;
+
+            window.open(href, '_blank', 'noopener,noreferrer');
+        });
 
         nodes.close?.addEventListener('click', hide);
         nodes.backdrop?.addEventListener('click', hide);
@@ -59,7 +154,7 @@
             if (!currentPayload) return;
             window.dispatchEvent(new CustomEvent('open-mail-composer', {
                 detail: {
-                    to: currentPayload.reply_to || '',
+                    to: currentPayload.reply_to || currentPayload.from || '',
                     subject: currentPayload.reply_subject || '',
                     body: currentPayload.reply_body || '',
                     fresh: false,

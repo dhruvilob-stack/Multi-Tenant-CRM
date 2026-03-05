@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CommissionLedger extends BaseModel
 {
@@ -21,6 +22,7 @@ class CommissionLedger extends BaseModel
         'commission_rate',
         'basis_amount',
         'commission_amount',
+        'paid_amount',
         'status',
     ];
 
@@ -30,6 +32,7 @@ class CommissionLedger extends BaseModel
             'commission_rate' => 'decimal:4',
             'basis_amount' => 'decimal:2',
             'commission_amount' => 'decimal:2',
+            'paid_amount' => 'decimal:2',
         ];
     }
 
@@ -56,5 +59,10 @@ class CommissionLedger extends BaseModel
     public function toUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'to_user_id');
+    }
+
+    public function payoutItems(): HasMany
+    {
+        return $this->hasMany(CommissionPayoutItem::class, 'commission_ledger_id');
     }
 }

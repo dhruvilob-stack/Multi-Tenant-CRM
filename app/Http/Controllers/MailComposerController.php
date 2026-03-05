@@ -150,8 +150,65 @@ class MailComposerController extends Controller
         $clean = strip_tags(trim($html), $allowed);
         $clean = preg_replace('/href\s*=\s*([\"\'])\s*javascript:[^\"\']*\1/i', 'href="#"', $clean) ?? $clean;
         $clean = preg_replace('/on\w+\s*=\s*([\"\']).*?\1/i', '', $clean) ?? $clean;
+        $clean = $this->linkifyPlainUrls($clean);
+        $clean = $this->forceLinksToOpenInNewTab($clean);
 
         return $clean;
+    }
+
+    private function forceLinksToOpenInNewTab(string $html): string
+    {
+        return preg_replace_callback('/<a\b([^>]*)>/i', function (array $matches): string {
+            $attrs = (string) ($matches[1] ?? '');
+
+            if (preg_match('/\bhref\s*=\s*([\"\'])(.*?)\1/i', $attrs, $hrefMatch) !== 1) {
+                return $matches[0];
+            }
+
+            $href = trim((string) ($hrefMatch[2] ?? ''));
+            if ($href === '') {
+                return $matches[0];
+            }
+
+            if (str_starts_with(mb_strtolower($href), 'javascript:')) {
+                $href = '#';
+            }
+
+            $attrs = preg_replace('/\s+target\s*=\s*([\"\']).*?\1/i', '', $attrs) ?? $attrs;
+            $attrs = preg_replace('/\s+rel\s*=\s*([\"\']).*?\1/i', '', $attrs) ?? $attrs;
+            $attrs = preg_replace('/\bhref\s*=\s*([\"\']).*?\1/i', 'href="'.e($href).'"', $attrs, 1) ?? $attrs;
+
+            return '<a '.trim($attrs).' target="_blank" rel="noopener noreferrer">';
+        }, $html) ?? $html;
+    }
+
+    private function linkifyPlainUrls(string $html): string
+    {
+        $parts = preg_split('/(<[^>]+>)/', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+        if (! is_array($parts)) {
+            return $html;
+        }
+
+        foreach ($parts as $index => $part) {
+            if ($part === '' || str_starts_with($part, '<')) {
+                continue;
+            }
+
+            $parts[$index] = preg_replace_callback('/(?<!["\'=])((?:https?:\/\/|www\.)[^\s<]+)/i', function (array $matches): string {
+                $url = trim((string) ($matches[1] ?? ''));
+                if ($url === '') {
+                    return '';
+                }
+
+                $href = str_starts_with(mb_strtolower($url), 'www.') ? ('https://'.$url) : $url;
+                $safeUrl = e($url);
+                $safeHref = e($href);
+
+                return '<a href="'.$safeHref.'" target="_blank" rel="noopener noreferrer">'.$safeUrl.'</a>';
+            }, $part) ?? $part;
+        }
+
+        return implode('', $parts);
     }
 
     /**

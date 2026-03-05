@@ -8,8 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MarginCommission extends BaseModel
 {
     protected $fillable = [
+        'organization_id',
         'product_id',
         'category_id',
+        'rule_type',
+        'priority',
+        'is_active',
         'from_role',
         'to_role',
         'commission_type',
@@ -20,6 +24,8 @@ class MarginCommission extends BaseModel
     {
         return [
             'commission_value' => 'decimal:4',
+            'priority' => 'integer',
+            'is_active' => 'boolean',
         ];
     }
 
