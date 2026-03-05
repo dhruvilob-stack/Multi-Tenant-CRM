@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Filament\Pages\InboxMail;
 use App\Mail\OrganizationMailMessage;
 use App\Models\Invoice;
 use App\Models\Order;
@@ -83,7 +84,7 @@ class OrganizationMailService
                         ->actions([
                             Action::make('open')
                                 ->label('Open Inbox')
-                                ->url(URL::to('/admin/inbox-mail')),
+                                ->url(InboxMail::getUrl()),
                         ])
                         ->sendToDatabase($recipient, isEventDispatched: true)
                         ->broadcast($recipient);

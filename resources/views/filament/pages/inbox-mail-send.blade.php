@@ -1,231 +1,96 @@
 <x-filament-panels::page>
-    <style>
-        .mail-shell {
-            background:
-                radial-gradient(circle at 8% 0%, rgba(56, 189, 248, .15), transparent 42%),
-                radial-gradient(circle at 90% 8%, rgba(16, 185, 129, .12), transparent 34%),
-                linear-gradient(140deg, #f8fbff 0%, #f0fdfa 56%, #fff7ed 100%);
-            border: 1px solid #bfdbfe;
-            border-radius: 22px;
-            padding: 20px;
-            box-shadow: 0 20px 40px rgba(2, 132, 199, .08);
-        }
-
-        .mail-topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            margin-bottom: 14px;
-            padding: 10px 14px;
-            background: linear-gradient(90deg, #1d4ed8, #0ea5e9);
-            border-radius: 14px;
-            color: #fff;
-        }
-
-        .mail-topbar h2 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: .2px;
-        }
-
-        .mail-topbar p {
-            margin: 0;
-            opacity: .92;
-            font-size: 12px;
-        }
-
-        .mail-card {
-            background: #ffffff;
-            border: 1px solid #dbeafe;
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 8px 20px rgba(30, 64, 175, .06);
-        }
-
-        .mail-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-        }
-
-        .mail-title-badge {
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
-            background: linear-gradient(135deg, #2563eb, #0ea5e9);
-            box-shadow: 0 0 0 5px #dbeafe;
-        }
-
-        .field-shell {
-            border: 1px solid #cbd5e1;
-            border-radius: 14px;
-            padding: 10px;
-            background: linear-gradient(180deg, #fff, #f8fafc);
-        }
-
-        .mail-chip {
-            background: #eff6ff;
-            border: 1px solid #93c5fd;
-            color: #1e3a8a;
-            border-radius: 999px;
-            padding: 4px 10px;
-            font-size: 12px;
-        }
-
-        .chip-remove {
-            width: 18px;
-            height: 18px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: #fee2e2;
-            color: #b91c1c;
-            font-size: 11px;
-            line-height: 1;
-        }
-
-        .mail-input {
-            width: 100%;
-            border: 1px solid #cbd5e1;
-            border-radius: 12px;
-            background: #fff;
-            padding: 8px 10px;
-            font-size: 14px;
-            outline: none;
-        }
-
-        .mail-input:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 0 3px rgba(56, 189, 248, .14);
-        }
-
-        .suggestion-box {
-            border: 1px solid #bfdbfe;
-            border-radius: 12px;
-            background: #fff;
-            box-shadow: 0 8px 22px rgba(37, 99, 235, .14);
-            max-height: 220px;
-            overflow: auto;
-        }
-
-        .suggestion-item {
-            width: 100%;
-            text-align: left;
-            padding: 10px 12px;
-            font-size: 13px;
-            border-bottom: 1px solid #eff6ff;
-        }
-
-        .suggestion-item:hover {
-            background: #eff6ff;
-        }
-
-        .mail-footer {
-            display: flex;
-            align-items: center;
-            justify-content: end;
-            margin-top: 14px;
-        }
-
-        .send-btn {
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, .22);
-        }
-    </style>
-
-    <form wire:submit="sendMail" class="space-y-5">
-        <div class="mail-shell">
-            <div class="mail-topbar">
+    <form wire:submit="sendMail" class="space-y-6">
+        <x-filament::section heading="Compose Mail" description="Create and send organization mail.">
+            <div class="space-y-4">
                 <div>
-                    <h2>Organization Mail Composer</h2>
-                    <p>Design rich internal communication with templates, media and smart suggestions.</p>
-                </div>
-                <x-filament::badge color="success">Interactive Composer</x-filament::badge>
-            </div>
+                    <label class="fi-fo-field-wrp-label inline-flex items-center gap-x-3" for="toQuery">
+                        <span class="text-sm font-medium text-gray-950 dark:text-white">To</span>
+                    </label>
 
-            <div class="mail-card">
-                <div class="mail-title"><span class="mail-title-badge"></span>Recipients & Subject</div>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                        @foreach($this->to as $email)
+                            <span class="fi-badge fi-color-gray inline-flex items-center gap-2 rounded-md px-2 py-1 text-xs">
+                                {{ $email }}
+                                <button type="button" wire:click="removeRecipient('{{ $email }}')" class="text-gray-500">x</button>
+                            </span>
+                        @endforeach
+                    </div>
 
-                <div>
-                    <label class="text-sm font-medium text-slate-700">To</label>
-                    <div class="field-shell mt-2">
-                        <div class="flex flex-wrap gap-2 mb-2">
-                            @foreach($this->to as $email)
-                                <span class="mail-chip inline-flex items-center gap-2">
-                                    {{ $email }}
-                                    <button type="button" class="chip-remove" wire:click="removeRecipient('{{ $email }}')">x</button>
-                                </span>
+                    <div class="mt-2 flex gap-2">
+                        <input
+                            id="toQuery"
+                            type="text"
+                            wire:model.live.debounce.250ms="toQuery"
+                            wire:keydown.enter.prevent="addRecipientFromQuery"
+                            placeholder="Search by user name or email..."
+                            class="fi-input block w-full"
+                        />
+                        <x-filament::button type="button" color="gray" wire:click="addRecipientFromQuery">Add</x-filament::button>
+                    </div>
+
+                    @if(!empty($this->toSuggestions))
+                        <div class="mt-2 rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/5">
+                            @foreach($this->toSuggestions as $item)
+                                <button
+                                    type="button"
+                                    class="block w-full border-b border-gray-100 px-3 py-2 text-left text-sm last:border-b-0 dark:border-white/10"
+                                    wire:click="addRecipient('{{ $item['email'] }}')"
+                                >
+                                    {{ $item['label'] }}
+                                </button>
                             @endforeach
                         </div>
-
-                        <div class="flex gap-2">
-                            <input
-                                type="text"
-                                wire:model.live.debounce.250ms="toQuery"
-                                wire:keydown.enter.prevent="addRecipientFromQuery"
-                                placeholder="Search by user name or email..."
-                                class="mail-input"
-                            />
-                            <x-filament::button type="button" color="info" wire:click="addRecipientFromQuery">Add</x-filament::button>
-                        </div>
-
-                        @if(!empty($this->toSuggestions))
-                            <div class="suggestion-box mt-2">
-                                @foreach($this->toSuggestions as $item)
-                                    <button
-                                        type="button"
-                                        class="suggestion-item"
-                                        wire:click="addRecipient('{{ $item['email'] }}')"
-                                    >
-                                        {{ $item['label'] }}
-                                    </button>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
+                    @endif
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <div>
-                        <label class="text-sm text-slate-700">Subject</label>
-                        <input type="text" wire:model.defer="subject" class="mail-input mt-1" placeholder="Enter mail subject" />
+                        <label class="fi-fo-field-wrp-label inline-flex items-center gap-x-3" for="subject">
+                            <span class="text-sm font-medium text-gray-950 dark:text-white">Subject</span>
+                        </label>
+                        <input
+                            id="subject"
+                            type="text"
+                            wire:model.defer="subject"
+                            class="fi-input mt-2 block w-full"
+                            placeholder="Enter mail subject"
+                        />
                     </div>
+
                     <div>
-                        <label class="text-sm text-slate-700">Template</label>
-                        <div class="flex gap-2 mt-1">
-                            <select wire:model.defer="template_key" class="mail-input">
+                        <label class="fi-fo-field-wrp-label inline-flex items-center gap-x-3" for="template_key">
+                            <span class="text-sm font-medium text-gray-950 dark:text-white">Template</span>
+                        </label>
+                        <div class="mt-2 flex gap-2">
+                            <select id="template_key" wire:model.defer="template_key" class="fi-select-input block w-full">
                                 <option value="">Select Template</option>
                                 @foreach($this->templateOptions() as $value => $label)
                                     <option value="{{ $value }}">{{ $label }}</option>
                                 @endforeach
                             </select>
-                            <x-filament::button type="button" size="sm" color="info" wire:click="applyTemplate">Use</x-filament::button>
+                            <x-filament::button type="button" color="gray" wire:click="applyTemplate">Use</x-filament::button>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     <div>
-                        <label class="text-sm text-slate-700">Order ID</label>
-                        <select wire:model.defer="order_id" class="mail-input mt-1">
+                        <label class="fi-fo-field-wrp-label inline-flex items-center gap-x-3" for="order_id">
+                            <span class="text-sm font-medium text-gray-950 dark:text-white">Order</span>
+                        </label>
+                        <select id="order_id" wire:model.defer="order_id" class="fi-select-input mt-2 block w-full">
                             <option value="">Optional</option>
                             @foreach($this->orderOptions() as $id => $orderNo)
                                 <option value="{{ $id }}">{{ $orderNo }}</option>
                             @endforeach
                         </select>
                     </div>
+
                     <div>
-                        <label class="text-sm text-slate-700">Invoice ID</label>
-                        <select wire:model.defer="invoice_id" class="mail-input mt-1">
+                        <label class="fi-fo-field-wrp-label inline-flex items-center gap-x-3" for="invoice_id">
+                            <span class="text-sm font-medium text-gray-950 dark:text-white">Invoice</span>
+                        </label>
+                        <select id="invoice_id" wire:model.defer="invoice_id" class="fi-select-input mt-2 block w-full">
                             <option value="">Optional</option>
                             @foreach($this->invoiceOptions() as $id => $invoiceNo)
                                 <option value="{{ $id }}">{{ $invoiceNo }}</option>
@@ -234,41 +99,39 @@
                     </div>
                 </div>
             </div>
+        </x-filament::section>
 
-            <div class="mail-card mt-4">
-                <div class="mail-title"><span class="mail-title-badge"></span>Mail Body (Rich Text Style)</div>
-                <div class="border border-sky-200 rounded-2xl p-3 bg-gradient-to-b from-sky-50 to-white">
-                    {{ $this->form }}
+        <x-filament::section heading="Mail Body">
+            {{ $this->form }}
+        </x-filament::section>
+
+        <x-filament::section heading="Attachments & Options">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div>
+                    <label class="fi-fo-field-wrp-label inline-flex items-center gap-x-3" for="media_files">
+                        <span class="text-sm font-medium text-gray-950 dark:text-white">Media Attachments</span>
+                    </label>
+                    <input id="media_files" type="file" multiple wire:model="media_files" class="fi-input mt-2 block w-full" />
+                    @error('media_files.*')
+                        <p class="mt-1 text-sm text-danger-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="space-y-2 text-sm">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" wire:model.defer="attach_invoice_pdf" class="rounded border-gray-300" />
+                        <span>Attach Invoice PDF</span>
+                    </label>
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" wire:model.defer="attach_sales_report" class="rounded border-gray-300" />
+                        <span>Attach Sales Dashboard PDF</span>
+                    </label>
                 </div>
             </div>
+        </x-filament::section>
 
-            <div class="mail-card mt-4">
-                <div class="mail-title"><span class="mail-title-badge"></span>Attachments & Output</div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-sm">Media Attachments (images/docs)</label>
-                        <input type="file" multiple wire:model="media_files" class="mail-input mt-1" />
-                        @error('media_files.*')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div class="flex flex-col gap-2 justify-center text-sm">
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" wire:model.defer="attach_invoice_pdf" class="rounded border-gray-300" />
-                            Attach Invoice PDF
-                        </label>
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" wire:model.defer="attach_sales_report" class="rounded border-gray-300" />
-                            Attach Sales Dashboard PDF
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mail-footer">
-                <x-filament::button type="submit" size="lg" class="send-btn">Send Mail</x-filament::button>
-            </div>
+        <div class="flex justify-end">
+            <x-filament::button type="submit" size="lg">Send Mail</x-filament::button>
         </div>
     </form>
-
 </x-filament-panels::page>

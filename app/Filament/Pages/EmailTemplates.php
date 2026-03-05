@@ -13,7 +13,7 @@ class EmailTemplates extends Page
     protected static ?string $slug = 'inbox-mail/templates';
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedEnvelopeOpen;
     protected static ?string $navigationLabel = 'Templates';
-    protected static string|\UnitEnum|null $navigationGroup = 'Inbox Mail';
+    protected static string|\UnitEnum|null $navigationGroup = 'Configuration';
 
     public array $templates = [];
 
@@ -55,7 +55,7 @@ class EmailTemplates extends Page
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Inbox Mail';
+        return __('filament.admin.groups.configuration');
     }
 
     public static function getNavigationLabel(): string

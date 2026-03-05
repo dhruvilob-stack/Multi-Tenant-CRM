@@ -10,16 +10,22 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 
-class InboxMailTrash extends Page
+class InboxMailStarred extends Page
 {
-    protected string $view = 'filament.pages.inbox-mail-trash';
-    protected static ?string $slug = 'inbox-mail/trash';
+    protected string $view = 'filament.pages.inbox-mail-starred';
+
+    protected static ?string $slug = 'inbox-mail/starred';
+
     protected static ?string $cluster = Mail::class;
-    protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedTrash;
-    protected static ?string $navigationLabel = 'Trash';
-    protected static ?int $navigationSort = 3;
+
+    protected static string | null | \BackedEnum $navigationIcon = Heroicon::OutlinedStar;
+
+    protected static ?string $navigationLabel = 'Starred';
+
+    protected static ?int $navigationSort = 1;
 
     public array $messages = [];
+
     public ?array $openedMail = null;
 
     public static function canAccess(): bool
@@ -49,7 +55,7 @@ class InboxMailTrash extends Page
         ];
     }
 
-    public function restore(int $recipientRowId): void
+    public function moveToTrash(int $recipientRowId): void
     {
         $row = OrganizationMailRecipient::query()
             ->where('id', $recipientRowId)
@@ -60,8 +66,28 @@ class InboxMailTrash extends Page
             return;
         }
 
-        $row->update(['deleted_at' => null]);
-        Notification::make()->success()->title('Restored to inbox')->send();
+        $row->update(['deleted_at' => now()]);
+
+        Notification::make()->success()->title('Moved to trash')->send();
+        $this->loadMessages();
+
+        if (($this->openedMail['id'] ?? null) === $recipientRowId) {
+            $this->openedMail = null;
+        }
+    }
+
+    public function toggleFeatured(int $recipientRowId): void
+    {
+        $row = OrganizationMailRecipient::query()
+            ->where('id', $recipientRowId)
+            ->where('recipient_id', auth()->id())
+            ->first();
+
+        if (! $row) {
+            return;
+        }
+
+        $row->update(['featured' => ! $row->featured]);
         $this->loadMessages();
     }
 
@@ -71,12 +97,44 @@ class InboxMailTrash extends Page
             ->with('mail.recipients')
             ->where('id', $recipientRowId)
             ->where('recipient_id', auth()->id())
-            ->whereNotNull('deleted_at')
+            ->where('featured', true)
+            ->whereNull('deleted_at')
             ->first();
 
         if (! $row) {
             return;
         }
+
+        $wasUnread = ! $row->read_at;
+        if ($wasUnread) {
+            $row->update(['read_at' => now()]);
+        }
+
+        $meta = (array) ($row->mail?->meta ?? []);
+        $attachmentRows = array_values(array_filter((array) ($meta['attachments'] ?? []), fn ($v) => is_array($v)));
+        if ($attachmentRows === []) {
+            $legacy = array_values(array_filter((array) ($meta['media_attachments'] ?? []), fn ($v) => is_string($v) && $v !== ''));
+            $attachmentRows = array_map(fn (string $path): array => [
+                'path' => $path,
+                'name' => basename($path),
+                'mime' => mime_content_type($path) ?: 'application/octet-stream',
+                'size' => (int) @filesize($path),
+            ], $legacy);
+        }
+
+        $attachments = collect($attachmentRows)->map(function (array $attachment, int $index) use ($row): array {
+            $name = (string) ($attachment['name'] ?? ('attachment-'.$index));
+            $mime = (string) ($attachment['mime'] ?? 'application/octet-stream');
+            $isImage = str_starts_with(strtolower($mime), 'image/');
+
+            return [
+                'name' => $name,
+                'mime' => $mime,
+                'is_image' => $isImage,
+                'download_url' => route('mail.attachments.download', ['recipient' => $row->id, 'index' => $index]),
+                'preview_url' => route('mail.attachments.download', ['recipient' => $row->id, 'index' => $index, 'inline' => 1]),
+            ];
+        })->all();
 
         $this->openedMail = [
             'id' => $row->id,
@@ -85,6 +143,8 @@ class InboxMailTrash extends Page
             'to' => auth()->user()?->email,
             'sent_at' => optional($row->mail?->sent_at)->toDateTimeString(),
             'body' => $row->mail?->body,
+            'template_key' => $row->mail?->template_key,
+            'attachments' => $attachments,
         ];
 
         $subject = (string) ($this->openedMail['subject'] ?? '');
@@ -100,6 +160,12 @@ class InboxMailTrash extends Page
             'reply_subject' => $replySubject,
             'reply_body' => $replyBody,
         ]);
+
+        $this->loadMessages();
+
+        if ($wasUnread) {
+            $this->dispatch('mail-counts-updated');
+        }
     }
 
     private function loadMessages(): void
@@ -107,15 +173,19 @@ class InboxMailTrash extends Page
         $this->messages = OrganizationMailRecipient::query()
             ->with('mail.sender')
             ->where('recipient_id', auth()->id())
-            ->whereNotNull('deleted_at')
+            ->whereNull('deleted_at')
+            ->where('featured', true)
             ->latest('id')
-            ->limit(100)
+            ->limit(200)
             ->get()
             ->map(fn (OrganizationMailRecipient $row): array => [
                 'id' => $row->id,
                 'subject' => $row->mail?->subject,
                 'from' => $row->mail?->sender_email,
                 'sent_at' => optional($row->mail?->sent_at)->toDateTimeString(),
+                'read_at' => optional($row->read_at)->toDateTimeString(),
+                'featured' => (bool) $row->featured,
+                'template_key' => $row->mail?->template_key,
             ])
             ->all();
     }

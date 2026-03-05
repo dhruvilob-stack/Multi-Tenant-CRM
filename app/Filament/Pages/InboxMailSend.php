@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Clusters\Mail;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\OrganizationMail;
@@ -27,9 +28,10 @@ class InboxMailSend extends Page implements HasForms
 
     protected string $view = 'filament.pages.inbox-mail-send';
     protected static ?string $slug = 'inbox-mail/send';
+    protected static ?string $cluster = Mail::class;
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedPaperAirplane;
     protected static ?string $navigationLabel = 'Send Mail';
-    protected static string|\UnitEnum|null $navigationGroup = 'Inbox Mail';
+    protected static bool $shouldRegisterNavigation = false;
 
     public array $to = [];
     public string $toQuery = '';

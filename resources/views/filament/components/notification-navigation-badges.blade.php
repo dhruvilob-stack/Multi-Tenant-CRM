@@ -45,9 +45,13 @@
                 const url = new URL(href, window.location.origin);
                 const parts = url.pathname.split('/').filter(Boolean);
                 if (parts.length < 2) return { panel: null, section: null };
-                return { panel: parts[0], section: parts[1] || null };
+                return {
+                    panel: parts[0],
+                    section: parts.slice(1).join('/'),
+                    parentSection: parts[1] || null,
+                };
             } catch (e) {
-                return { panel: null, section: null };
+                return { panel: null, section: null, parentSection: null };
             }
         };
 
@@ -76,7 +80,7 @@
 
             links.forEach((link) => {
                 const href = link.getAttribute('href') || '';
-                const { section } = panelAndSectionFromUrl(href);
+                const { section, parentSection } = panelAndSectionFromUrl(href);
 
                 if (! section) {
                     setBadge(link, 0);
@@ -84,9 +88,12 @@
                 }
 
                 const normalized = section.toLowerCase();
+                const parent = (parentSection || '').toLowerCase();
                 const count = Number(
                     counts[normalized] ??
+                    counts[parent] ??
                     counts[singularize(normalized)] ??
+                    counts[singularize(parent)] ??
                     0
                 );
 
@@ -155,8 +162,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             fetchCounts();
             boot();
+            setInterval(fetchCounts, 15000);
         });
         document.addEventListener('livewire:navigated', boot);
+        window.addEventListener('mail-counts-updated', fetchCounts);
 
         if (window.Echo && userId) {
             window.Echo.private(`notifications.${userId}`)

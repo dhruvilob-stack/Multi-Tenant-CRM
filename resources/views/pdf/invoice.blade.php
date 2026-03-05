@@ -25,7 +25,7 @@
 
         .top-header {
             width: 100%;
-            border-bottom: 2px solid #0f766e;
+            border-bottom: 2px solid #030303;
             padding-bottom: 10px;
             margin-bottom: 12px;
             table-layout: fixed;

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DemoController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\MailComposerController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
@@ -87,6 +88,15 @@ Route::middleware('auth')->prefix('filament/notifications/sections')->group(func
         ->name('filament.notifications.sections.counts');
     Route::post('/read', [NotificationSectionController::class, 'markRead'])
         ->name('filament.notifications.sections.read');
+});
+
+Route::middleware('auth')->prefix('mail/compose')->group(function (): void {
+    Route::post('/send', [MailComposerController::class, 'send'])
+        ->name('mail.compose.send');
+    Route::post('/assist', [MailComposerController::class, 'assist'])
+        ->name('mail.compose.assist');
+    Route::get('/records', [MailComposerController::class, 'records'])
+        ->name('mail.compose.records');
 });
 
 Route::middleware('auth')->get(
