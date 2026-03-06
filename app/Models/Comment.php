@@ -11,6 +11,7 @@ class Comment extends BaseModel
         'commentable_type',
         'commentable_id',
         'customer_id',
+        'rating',
         'title',
         'content',
         'is_visible',
@@ -20,6 +21,7 @@ class Comment extends BaseModel
     {
         return [
             'is_visible' => 'boolean',
+            'rating' => 'integer',
         ];
     }
 

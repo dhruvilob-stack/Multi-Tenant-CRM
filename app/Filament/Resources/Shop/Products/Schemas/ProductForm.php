@@ -16,7 +16,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Str;
 
 class ProductForm
 {
@@ -48,8 +47,7 @@ class ProductForm
                                                 $product = $inventory->product?->name ?? 'Unknown Product';
                                                 $owner = $inventory->owner?->name ?? 'Unknown Owner';
                                                 $label = sprintf(
-                                                    '#%d | %s | SKU: %s | Qty: %s | Price: %0.2f | Owner: %s',
-                                                    $inventory->id,
+                                                    '%s | SKU: %s | Qty: %s | Price: %0.2f | Owner: %s',
                                                     $product,
                                                     (string) ($inventory->sku ?? '-'),
                                                     (string) $inventory->quantity_available,
@@ -102,34 +100,7 @@ class ProductForm
                                 TextInput::make('name')
                                     ->required()
                                     ->maxLength(255)
-                                    ->live(debounce: 500)
-                                    ->afterStateUpdated(function (mixed $state, Set $set): void {
-                                        $set('slug', Str::slug((string) $state));
-                                    }),
-
-                                TextInput::make('slug')
-                                    ->readOnly()
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->afterStateHydrated(function (mixed $state, Set $set, mixed $record): void {
-                                        if (filled($state)) {
-                                            return;
-                                        }
-
-                                        $name = (string) ($record?->name ?? '');
-                                        if (filled($name)) {
-                                            $set('slug', Str::slug($name));
-                                        }
-                                    })
-                                    ->dehydrateStateUsing(function (mixed $state, callable $get): string {
-                                        if (filled($state)) {
-                                            return (string) $state;
-                                        }
-
-                                        return Str::slug((string) $get('name'));
-                                    })
-                                    ->unique(Product::class, 'slug', ignoreRecord: true)
-                                    ->helperText('Auto-generated from product name.'),
+                                    ->live(debounce: 500),
 
                                 RichEditor::make('description')
                                     ->columnSpanFull(),

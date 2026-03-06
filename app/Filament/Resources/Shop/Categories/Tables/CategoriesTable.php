@@ -24,7 +24,10 @@ class CategoriesTable
                     ->sortable()
                     ->weight(FontWeight::Medium),
                 TextColumn::make('parent.name')
-                    ->searchable()
+                    ->label('Parent Category')
+                    ->state(fn (Category $record): string => $record->parent?->name ?: 'Self')
+                    ->badge()
+                    ->color(fn (Category $record): string => $record->parent_id ? 'gray' : 'primary')
                     ->sortable(),
                 TextColumn::make('products_count')
                     ->counts('products')

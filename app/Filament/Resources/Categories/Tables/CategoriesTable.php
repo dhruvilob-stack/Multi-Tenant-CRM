@@ -16,8 +16,10 @@ class CategoriesTable
     {
         return $table
             ->columns([
+                TextColumn::make('sr_no')
+                    ->label('S.No')
+                    ->rowIndex(),
                 TextColumn::make('name')->searchable(),
-                TextColumn::make('slug')->searchable(),
                 TextColumn::make('organization.name')->label('Organization'),
                 TextColumn::make('created_at')->dateTime(),
             ])

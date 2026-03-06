@@ -22,6 +22,7 @@ class ReportsInventory extends Page
 
     protected string $view = 'filament.pages.reports-inventory';
     protected static ?string $slug = 'reports/inventory';
+    protected static ?string $title = 'Inventory Dashboard';
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedChartBarSquare;
 
     public static function getNavigationGroup(): ?string

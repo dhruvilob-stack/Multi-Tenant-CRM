@@ -9,7 +9,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Str;
 
 class CustomRoleForm
 {
@@ -20,18 +19,7 @@ class CustomRoleForm
                 TextInput::make('name')
                     ->required()
                     ->maxLength(120)
-                    ->live(onBlur: true)
-                    ->afterStateUpdated(function (?string $state, callable $set): void {
-                        if (! filled($state)) {
-                            return;
-                        }
-
-                        $set('slug', Str::slug($state));
-                    }),
-                TextInput::make('slug')
-                    ->required()
-                    ->maxLength(140)
-                    ->unique(ignoreRecord: true),
+                    ->live(onBlur: true),
                 Toggle::make('is_active')
                     ->default(true),
                 Textarea::make('description')

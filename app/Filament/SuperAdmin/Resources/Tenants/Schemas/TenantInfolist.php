@@ -11,9 +11,7 @@ class TenantInfolist
     {
         return $schema
             ->components([
-                TextEntry::make('tenant_id')->label('Tenant ID'),
                 TextEntry::make('name'),
-                TextEntry::make('slug'),
                 TextEntry::make('email'),
                 TextEntry::make('status'),
                 TextEntry::make('created_at')->dateTime(),

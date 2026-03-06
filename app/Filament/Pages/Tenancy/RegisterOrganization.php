@@ -19,7 +19,6 @@ class RegisterOrganization extends RegisterTenant
         return $schema
             ->components([
                 TextInput::make('name'),
-                TextInput::make('slug')->unique(Organization::class, 'slug'),
             ]);
     }
 

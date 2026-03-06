@@ -63,6 +63,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::TOPBAR_START, fn() => view('filament.components.topbar-role-label'))
             ->renderHook(PanelsRenderHook::STYLES_AFTER, fn() => view('filament.components.notification-topbar-theme'))
             ->renderHook(PanelsRenderHook::STYLES_AFTER, fn() => view('filament.components.global-search-responsive'))
+            ->renderHook(PanelsRenderHook::STYLES_AFTER, fn() => view('filament.components.view-readability-theme'))
             ->renderHook(PanelsRenderHook::SCRIPTS_AFTER, fn() => view('filament.components.notification-row-highlight'))
             ->renderHook(PanelsRenderHook::SCRIPTS_AFTER, fn() => view('filament.components.notification-navigation-badges'))
             ->renderHook(PanelsRenderHook::SCRIPTS_AFTER, fn() => view('filament.components.sidebar-spa-sync'))

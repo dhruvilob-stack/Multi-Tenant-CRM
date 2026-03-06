@@ -17,9 +17,10 @@ class TenantsTable
     {
         return $table
             ->columns([
-                TextColumn::make('tenant_id')->label('Tenant ID')->searchable()->sortable(),
+                TextColumn::make('sr_no')
+                    ->label('S.No')
+                    ->rowIndex(),
                 TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('slug')->searchable(),
                 TextColumn::make('email'),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('direct_users_count')

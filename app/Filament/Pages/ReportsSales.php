@@ -25,6 +25,8 @@ class ReportsSales extends Page
 
     protected string $view = 'filament.pages.reports-sales';
     protected static ?string $slug = 'reports/sales';
+        protected static ?string $title = 'Sales Dashboard';
+
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedChartBar;
 
     public static function getNavigationGroup(): ?string

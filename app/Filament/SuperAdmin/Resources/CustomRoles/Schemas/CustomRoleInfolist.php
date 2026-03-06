@@ -12,7 +12,6 @@ class CustomRoleInfolist
         return $schema
             ->components([
                 TextEntry::make('name'),
-                TextEntry::make('slug'),
                 TextEntry::make('is_active')
                     ->badge()
                     ->formatStateUsing(fn (bool $state): string => $state ? 'Active' : 'Inactive'),
@@ -26,4 +25,3 @@ class CustomRoleInfolist
             ->columns(2);
     }
 }
-

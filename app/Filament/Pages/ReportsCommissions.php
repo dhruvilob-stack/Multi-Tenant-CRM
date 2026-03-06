@@ -14,6 +14,9 @@ class ReportsCommissions extends Page
 {
     protected string $view = 'filament.pages.reports-commissions';
     protected static ?string $slug = 'reports/commissions';
+
+        protected static ?string $title = 'Commission Dashboard';
+
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 
     public static function getNavigationGroup(): ?string

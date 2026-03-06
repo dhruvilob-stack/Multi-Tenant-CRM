@@ -23,7 +23,6 @@ class OrganizationForm
                             ->searchable()
                             ->preload(),
                         TextInput::make('name')->required()->maxLength(255),
-                        TextInput::make('slug')->required()->unique(ignoreRecord: true),
                         TextInput::make('email')->email(),
                         TextInput::make('phone'),
                         TextInput::make('logo')->label('Logo URL'),

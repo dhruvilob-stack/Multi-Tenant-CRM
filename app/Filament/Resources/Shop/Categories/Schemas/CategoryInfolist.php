@@ -16,10 +16,11 @@ class CategoryInfolist
                 Section::make('Category Details')
                     ->schema([
                         TextEntry::make('name')->weight('bold'),
-                        TextEntry::make('slug'),
                         TextEntry::make('parent.name')
                             ->label('Parent Category')
-                            ->placeholder('No parent'),
+                            ->state(fn ($record): string => $record->parent?->name ?: 'Self')
+                            ->badge()
+                            ->color(fn ($record): string => $record->parent_id ? 'gray' : 'primary'),
                         IconEntry::make('is_visible')
                             ->label('Visible'),
                         TextEntry::make('products_count')

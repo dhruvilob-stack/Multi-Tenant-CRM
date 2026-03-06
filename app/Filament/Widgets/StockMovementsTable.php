@@ -36,6 +36,9 @@ class StockMovementsTable extends TableWidget
             ->defaultPaginationPageOption(10)
             ->paginationPageOptions([10, 25, 50])
             ->columns([
+                TextColumn::make('sr_no')
+                    ->label('S.No')
+                    ->rowIndex(),
                 TextColumn::make('product_name')
                     ->label('Product')
                     ->state(fn (AuditLog $record): string => (string) ($record->auditable?->product?->name ?? 'Unmapped'))
@@ -53,10 +56,6 @@ class StockMovementsTable extends TableWidget
                     )
                     ->placeholder('Unmapped')
                     ->toggleable(),
-                TextColumn::make('auditable_id')
-                    ->label('Inventory ID')
-                    ->searchable()
-                    ->sortable(),
                 TextColumn::make('event')
                     ->formatStateUsing(fn (?string $state): string => filled($state) ? Str::headline($state) : 'Unknown')
                     ->badge()

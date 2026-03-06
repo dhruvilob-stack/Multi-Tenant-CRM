@@ -117,34 +117,54 @@
             sidebar.isOpen = false;
         };
 
-        const setUpHoverOpenSidebar = () => {
+        const updateSidebarToggleState = () => {
             const sidebarRoot = getSidebarRoot();
             if (!sidebarRoot) {
                 return;
             }
 
-            if (sidebarRoot.dataset.crmHoverSidebarBound === '1') {
-                return;
-            }
+            const isOpen = sidebarRoot.classList.contains('fi-sidebar-open');
 
-            sidebarRoot.dataset.crmHoverSidebarBound = '1';
-
-            sidebarRoot.addEventListener('mouseenter', () => {
-                if (window.innerWidth < 1024) {
-                    return;
-                }
-
-                const sidebar = window.Alpine?.store?.('sidebar');
-                sidebar?.open?.();
+            document.querySelectorAll('[data-crm-sidebar-toggle]').forEach((button) => {
+                button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
             });
 
-            sidebarRoot.addEventListener('mouseleave', () => {
-                if (window.innerWidth < 1024) {
+            document.querySelectorAll('[data-crm-sidebar-toggle-arrow]').forEach((arrow) => {
+                arrow.textContent = isOpen ? '<' : '>';
+            });
+        };
+
+        const setUpSidebarToggleButton = () => {
+            document.querySelectorAll('[data-crm-sidebar-toggle]').forEach((button) => {
+                if (button.dataset.crmSidebarToggleBound === '1') {
                     return;
                 }
 
-                const sidebar = window.Alpine?.store?.('sidebar');
-                sidebar?.close?.();
+                button.dataset.crmSidebarToggleBound = '1';
+
+                button.addEventListener('click', (event) => {
+                    event.preventDefault();
+
+                    if (window.innerWidth < 1024) {
+                        return;
+                    }
+
+                    const sidebar = window.Alpine?.store?.('sidebar');
+                    if (!sidebar) {
+                        return;
+                    }
+
+                    const sidebarRoot = getSidebarRoot();
+                    const isOpen = sidebarRoot?.classList.contains('fi-sidebar-open');
+
+                    if (isOpen) {
+                        sidebar.close?.();
+                    } else {
+                        sidebar.open?.();
+                    }
+
+                    requestAnimationFrame(updateSidebarToggleState);
+                });
             });
         };
 
@@ -181,16 +201,18 @@
             normalizeSidebarStore();
             setSidebarDesktopCollapsedByDefault();
             setUpGroupAccordionBehavior();
-            setUpHoverOpenSidebar();
+            setUpSidebarToggleButton();
             syncGroupsForActivePage();
+            updateSidebarToggleState();
 
             requestAnimationFrame(() => {
                 normalizeSidebarStore();
                 setSidebarDesktopCollapsedByDefault();
                 restoreSidebarScroll();
                 setUpGroupAccordionBehavior();
-                setUpHoverOpenSidebar();
+                setUpSidebarToggleButton();
                 syncGroupsForActivePage();
+                updateSidebarToggleState();
             });
         };
 
@@ -230,7 +252,7 @@
         }
 
         .fi-main {
-            border: 1px solid color-mix(in oklab, var(--primary-500) 25%, #cbd5e1);
+            border: 2px solid color-mix(in oklab, var(--primary-500) 25%, #cbd5e1);
             border-radius: 0.9rem;
             box-sizing: border-box;
             /* width: 100%; */

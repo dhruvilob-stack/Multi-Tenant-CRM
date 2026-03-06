@@ -19,7 +19,6 @@ class ProductInfolist
                     ->schema([
                         TextEntry::make('name')
                             ->weight('bold'),
-                        TextEntry::make('slug'),
                         TextEntry::make('status')->badge(),
                         TextEntry::make('manufacturer.name')
                             ->label('Brand / Manufacturer')

@@ -14,28 +14,62 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProductsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withAvg('comments', 'rating'))
             ->columns([
                 TextColumn::make('sku')->searchable(),
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('manufacturer.name')->label('Manufacturer'),
                 TextColumn::make('category.name')->label('Category'),
                 TextColumn::make('base_price')->money(fn (): string => SystemSettings::currencyForCurrentUser())->sortable(),
+                TextColumn::make('comments_avg_rating')
+                    ->label('Avg Review')
+                    ->formatStateUsing(function ($state): string {
+                        $avg = round((float) ($state ?? 0), 1);
+                        $rounded = max(0, min(5, (int) round($avg)));
+
+                        return str_repeat('★', $rounded)
+                            .str_repeat('☆', 5 - $rounded)
+                            .' ('.number_format($avg, 1).')';
+                    })
+                    ->sortable(),
                 TextColumn::make('qty')->label('Stock Qty')->sortable(),
                 TextColumn::make('purchased_qty')->label('Purchased Qty')->numeric(decimalPlaces: 3)->sortable(),
                 TextColumn::make('status')->badge(),
                 IconColumn::make('available_for_distributor')->boolean(),
             ])
             ->filters([
-                //
+                SelectFilter::make('star_rating')
+                    ->label('Review Stars')
+                    ->options([
+                        '5' => '5 Stars',
+                        '4' => '4 Stars',
+                        '3' => '3 Stars',
+                        '2' => '2 Stars',
+                        '1' => '1 Star',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $star = (int) ($data['value'] ?? 0);
+
+                        if ($star < 1 || $star > 5) {
+                            return $query;
+                        }
+
+                        return $query->whereRaw(
+                            '(SELECT ROUND(COALESCE(AVG(c.rating), 0)) FROM comments c WHERE c.commentable_type = ? AND c.commentable_id = products.id) = ?',
+                            [Product::class, $star]
+                        );
+                    }),
             ])
             ->recordActions([
                 ViewAction::make(),

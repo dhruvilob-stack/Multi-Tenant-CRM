@@ -13,21 +13,10 @@ class TenantForm
     {
         return $schema
             ->components([
-                TextInput::make('tenant_id')
-                    ->label('Tenant ID')
-                    ->maxLength(36)
-                    ->disabled()
-                    ->dehydrated(false)
-                    ->helperText('Auto-generated and linked after saving organization.'),
                 TextInput::make('name')
                     ->label('Organization Name')
                     ->required()
                     ->maxLength(255),
-                TextInput::make('slug')
-                    ->required(fn (string $operation): bool => $operation !== 'create')
-                    ->visible(fn (string $operation): bool => $operation !== 'create')
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true),
                 TextInput::make('email')
                     ->label('Organization Email')
                     ->email()

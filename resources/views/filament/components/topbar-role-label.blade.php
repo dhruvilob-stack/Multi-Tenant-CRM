@@ -38,5 +38,6 @@
                 box-shadow: 0 0 0 6px rgba(20, 184, 166, 0);
             }
         }
+
     </style>
 @endif

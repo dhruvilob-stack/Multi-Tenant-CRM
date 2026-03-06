@@ -17,6 +17,12 @@ use Illuminate\Support\Str;
 trait HasDashboardArrangement
 {
     /**
+     * Set true on a dashboard page if you want to include every discovered panel widget.
+     * Default false keeps the dashboard stable by using only page-defined widgets.
+     */
+    protected bool $includeDiscoveredDashboardWidgets = false;
+
+    /**
      * @var array<int, array{widget: class-string<Widget>, label: string, visible: bool}>
      */
     public array $dashboardWidgetsForm = [];
@@ -60,12 +66,14 @@ trait HasDashboardArrangement
                 ->action(function (array $data): void {
                     $this->dashboardWidgetsForm = $this->sanitizeWidgetLayout(Arr::get($data, 'widgets', []));
                     $this->saveWidgetLayout($this->dashboardWidgetsForm);
-                    $this->dispatch('$refresh');
+                    $this->dashboardWidgetsForm = $this->loadWidgetLayout();
 
                     Notification::make()
                         ->title('Dashboard preferences saved')
                         ->success()
                         ->send();
+
+                    $this->redirect($this->resolveDashboardUrl(), navigate: true);
                 }),
             Action::make('resetDashboard')
                 ->label('Reset Layout')
@@ -74,12 +82,14 @@ trait HasDashboardArrangement
                 ->requiresConfirmation()
                 ->action(function (): void {
                     $this->resetWidgetLayout();
-                    $this->dispatch('$refresh');
+                    $this->dashboardWidgetsForm = $this->loadWidgetLayout();
 
                     Notification::make()
                         ->title('Dashboard layout reset')
                         ->success()
                         ->send();
+
+                    $this->redirect($this->resolveDashboardUrl(), navigate: true);
                 }),
         ];
     }
@@ -112,10 +122,16 @@ trait HasDashboardArrangement
      */
     protected function getAvailableDashboardWidgets(): array
     {
-        $widgets = array_values(array_unique([
-            ...$this->getDefaultDashboardWidgets(),
-            ...Filament::getWidgets(),
-        ]));
+        $widgets = $this->getDefaultDashboardWidgets();
+
+        if ($this->includeDiscoveredDashboardWidgets) {
+            $widgets = [
+                ...$widgets,
+                ...Filament::getWidgets(),
+            ];
+        }
+
+        $widgets = array_values(array_unique($widgets));
 
         return collect($widgets)
             ->filter(fn ($widget): bool => is_string($widget) && class_exists($widget) && is_subclass_of($widget, Widget::class))
@@ -256,5 +272,11 @@ trait HasDashboardArrangement
     {
         return Str::headline(class_basename($widget));
     }
-}
 
+    protected function resolveDashboardUrl(): string
+    {
+        $panelId = Filament::getCurrentPanel()?->getId();
+
+        return static::getUrl(panel: $panelId);
+    }
+}

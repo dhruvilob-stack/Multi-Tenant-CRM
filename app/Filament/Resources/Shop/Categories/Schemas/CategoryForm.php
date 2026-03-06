@@ -10,10 +10,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Placeholder;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Str;
 
 class CategoryForm
 {
@@ -28,21 +26,14 @@ class CategoryForm
                                 TextInput::make('name')
                                     ->required()
                                     ->maxLength(255)
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(fn (string $operation, $state, Set $set) => $operation === 'create' ? $set('slug', Str::slug((string) $state)) : null),
-
-                                TextInput::make('slug')
-                                    ->disabled()
-                                    ->dehydrated()
-                                    ->required()
-                                    ->maxLength(255)
-                                    ->unique(Category::class, 'slug', ignoreRecord: true),
+                                    ->live(onBlur: true),
                             ]),
 
                         Select::make('parent_id')
                             ->relationship('parent', 'name', fn (Builder $query) => $query->whereNull('parent_id'))
                             ->searchable()
-                            ->placeholder('Select parent category'),
+                            ->placeholder('Self (No Parent Category)')
+                            ->helperText('Leave this empty to keep this as a top-level self category.'),
 
                         Toggle::make('is_visible')
                             ->label('Visibility')

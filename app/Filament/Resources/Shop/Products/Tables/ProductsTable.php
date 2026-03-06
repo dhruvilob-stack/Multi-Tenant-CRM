@@ -20,12 +20,14 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Enums\FiltersLayout;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\QueryBuilder;
 use Filament\Tables\Filters\QueryBuilder\Constraints\BooleanConstraint;
 use Filament\Tables\Filters\QueryBuilder\Constraints\DateConstraint;
 use Filament\Tables\Filters\QueryBuilder\Constraints\NumberConstraint;
 use Filament\Tables\Filters\QueryBuilder\Constraints\TextConstraint;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class ProductsTable
@@ -33,6 +35,7 @@ class ProductsTable
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withAvg('comments', 'rating'))
             ->recordUrl(fn(Product $record): string => ProductResource::getUrl('view', ['record' => $record]))
             ->columns([
                 ImageColumn::make('images')
@@ -62,6 +65,17 @@ class ProductsTable
 
                 TextColumn::make('price')
                     ->money(fn (): string => SystemSettings::currencyForCurrentUser())
+                    ->sortable(),
+                TextColumn::make('comments_avg_rating')
+                    ->label('Avg Review')
+                    ->formatStateUsing(function ($state): string {
+                        $avg = round((float) ($state ?? 0), 1);
+                        $rounded = max(0, min(5, (int) round($avg)));
+
+                        return str_repeat('★', $rounded)
+                            .str_repeat('☆', 5 - $rounded)
+                            .' ('.number_format($avg, 1).')';
+                    })
                     ->sortable(),
 
                 TextColumn::make('sku')
@@ -95,10 +109,30 @@ class ProductsTable
                     ->toggledHiddenByDefault(),
             ])
             ->filters([
+                SelectFilter::make('star_rating')
+                    ->label('Review Stars')
+                    ->options([
+                        '5' => '5 Stars',
+                        '4' => '4 Stars',
+                        '3' => '3 Stars',
+                        '2' => '2 Stars',
+                        '1' => '1 Star',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $star = (int) ($data['value'] ?? 0);
+
+                        if ($star < 1 || $star > 5) {
+                            return $query;
+                        }
+
+                        return $query->whereRaw(
+                            '(SELECT ROUND(COALESCE(AVG(c.rating), 0)) FROM comments c WHERE c.commentable_type = ? AND c.commentable_id = products.id) = ?',
+                            [Product::class, $star]
+                        );
+                    }),
                 QueryBuilder::make()
                     ->constraints([
                         TextConstraint::make('name'),
-                        TextConstraint::make('slug'),
                         TextConstraint::make('sku')
                             ->label('SKU (Stock Keeping Unit)'),
                         TextConstraint::make('barcode')

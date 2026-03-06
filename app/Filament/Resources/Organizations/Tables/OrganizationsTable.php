@@ -15,8 +15,10 @@ class OrganizationsTable
     {
         return $table
             ->columns([
+                TextColumn::make('sr_no')
+                    ->label('S.No')
+                    ->rowIndex(),
                 TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('slug')->searchable(),
                 TextColumn::make('tenant.name')->label('Tenant'),
                 TextColumn::make('email'),
                 TextColumn::make('status')->badge(),

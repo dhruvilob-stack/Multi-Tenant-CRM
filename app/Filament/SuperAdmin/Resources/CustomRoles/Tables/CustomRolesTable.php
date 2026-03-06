@@ -15,8 +15,10 @@ class CustomRolesTable
     {
         return $table
             ->columns([
+                TextColumn::make('sr_no')
+                    ->label('S.No')
+                    ->rowIndex(),
                 TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('slug')->searchable(),
                 TextColumn::make('is_active')
                     ->badge()
                     ->formatStateUsing(fn (bool $state): string => $state ? 'Active' : 'Inactive'),
@@ -37,4 +39,3 @@ class CustomRolesTable
             ]);
     }
 }
-

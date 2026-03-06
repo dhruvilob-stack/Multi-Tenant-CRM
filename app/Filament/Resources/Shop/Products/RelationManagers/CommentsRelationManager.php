@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\Shop\Products\RelationManagers;
 
 use App\Models\User;
+use App\Support\UserRole;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -22,6 +24,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class CommentsRelationManager extends RelationManager
 {
@@ -38,8 +41,24 @@ class CommentsRelationManager extends RelationManager
                     ->required(),
 
                 Select::make('customer_id')
-                    ->relationship('customer', 'name')
+                    ->label('Customer')
+                    ->relationship('customer', 'name', fn (Builder $query): Builder => $query->where('role', UserRole::CONSUMER))
                     ->searchable()
+                    ->preload()
+                    ->required(),
+
+                Radio::make('rating')
+                    ->label('Rating')
+                    ->options([
+                        5 => '★',
+                        4 => '★',
+                        3 => '★',
+                        2 => '★',
+                        1 => '★',
+                    ])
+                    ->extraAttributes(['class' => 'fi-rating-stars'])
+                    ->inline()
+                    ->default(5)
                     ->required(),
 
                 Toggle::make('is_visible')
@@ -60,6 +79,10 @@ class CommentsRelationManager extends RelationManager
                     ->placeholder('Untitled'),
                 TextEntry::make('customer.name')
                     ->placeholder('No customer'),
+                TextEntry::make('rating')
+                    ->label('Rating')
+                    ->formatStateUsing(fn (?int $state): string => str_repeat('★', max(0, min(5, (int) $state)))
+                        .str_repeat('☆', max(0, 5 - max(0, min(5, (int) $state))))),
                 IconEntry::make('is_visible')
                     ->label('Public visibility'),
                 TextEntry::make('content')
@@ -79,6 +102,12 @@ class CommentsRelationManager extends RelationManager
 
                 TextColumn::make('customer.name')
                     ->searchable()
+                    ->sortable(),
+
+                TextColumn::make('rating')
+                    ->label('Rating')
+                    ->formatStateUsing(fn (?int $state): string => str_repeat('★', max(0, min(5, (int) $state)))
+                        .str_repeat('☆', max(0, 5 - max(0, min(5, (int) $state)))))
                     ->sortable(),
 
                 IconColumn::make('is_visible')

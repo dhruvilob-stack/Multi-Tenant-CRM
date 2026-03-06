@@ -27,6 +27,18 @@ class Dashboard extends BaseDashboard
     use HasDashboardArrangement;
     use HasFiltersForm;
 
+    /**
+     * @return int | array<string, int | null>
+     */
+    public function getColumns(): int | array
+    {
+        return [
+            'default' => 1,
+            'md' => 2,
+            'xl' => 2,
+        ];
+    }
+
     public function filtersForm(Schema $schema): Schema
     {
         return $schema

@@ -1,6 +1,6 @@
 <x-filament-panels::page>
     <x-filament::section
-        heading="Inventory Report"
+        heading="Inventory Dashboard"
         description="This page Shows Inventory Report. Use the filters above to narrow by category, location, and low-stock focus."
     >
             </x-filament::section>

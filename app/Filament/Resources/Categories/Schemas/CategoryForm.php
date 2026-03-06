@@ -18,7 +18,6 @@ class CategoryForm
                     ->searchable()
                     ->preload(),
                 TextInput::make('name')->required()->maxLength(255),
-                TextInput::make('slug')->required()->unique(ignoreRecord: true),
             ]);
     }
 }
