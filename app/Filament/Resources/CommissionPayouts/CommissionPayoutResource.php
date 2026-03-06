@@ -11,6 +11,7 @@ use App\Filament\Resources\CommissionPayouts\Schemas\CommissionPayoutInfolist;
 use App\Filament\Resources\CommissionPayouts\Tables\CommissionPayoutsTable;
 use App\Models\CommissionPayout;
 use App\Support\AccessMatrix;
+use App\Support\UserRole;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -30,27 +31,32 @@ class CommissionPayoutResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->role === 'org_admin';
+        return in_array(auth()->user()?->role, [
+            UserRole::ORG_ADMIN,
+            UserRole::MANUFACTURER,
+            UserRole::DISTRIBUTOR,
+            UserRole::VENDOR,
+        ], true);
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->role === 'org_admin';
+        return static::shouldRegisterNavigation();
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->role === 'org_admin';
+        return auth()->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canEdit($record): bool
     {
-        return auth()->user()?->role === 'org_admin';
+        return auth()->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canDelete($record): bool
     {
-        return auth()->user()?->role === 'org_admin';
+        return auth()->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function getEloquentQuery(): Builder
@@ -59,6 +65,10 @@ class CommissionPayoutResource extends Resource
         $user = auth()->user();
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;
+        }
+
+        if (in_array($user->role, [UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR], true)) {
+            return $query->where('user_id', $user->id);
         }
 
         if (! SchemaFacade::hasColumn('commission_payouts', 'organization_id')) {
@@ -108,5 +118,4 @@ class CommissionPayoutResource extends Resource
         ];
     }
 }
-
 

@@ -12,7 +12,8 @@ class TopCommissionPartnersChart extends ChartWidget
     protected ?string $heading = 'Top Earning Partners';
     protected ?string $description = 'Partners with highest commission earnings.';
     protected static ?int $sort = 4;
-    protected int | string | array $columnSpan = 1;
+    protected int | string | array $columnSpan = 2;
+    protected ?string $maxHeight = '380px';
 
     public static function canView(): bool
     {
@@ -28,11 +29,12 @@ class TopCommissionPartnersChart extends ChartWidget
     {
         $top = $this->ledgerQuery()
             ->whereIn('from_role', [UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR])
+            ->whereNotNull('from_user_id')
             ->with('fromUser:id,name')
             ->selectRaw('from_user_id, SUM(commission_amount) as total_commission')
             ->groupBy('from_user_id')
             ->orderByDesc('total_commission')
-            ->limit(5)
+            ->limit(10)
             ->get();
 
         return [

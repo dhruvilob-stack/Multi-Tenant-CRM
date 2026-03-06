@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Quotations\Schemas;
 
 use App\Models\User;
+use App\Support\QuotationStatus;
+use App\Support\UserRole;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -15,39 +17,80 @@ class QuotationForm
 {
     public static function configure(Schema $schema): Schema
     {
+        $user = auth()->user();
+
         return $schema
             ->components([
                 Section::make('Quotation')
+                    ->description('Create a quote, send it to distributor, then complete negotiation through workflow actions.')
                     ->schema([
                         TextInput::make('quotation_number')
                             ->required()
-                            ->default(fn (): string => sprintf('QUO-%s-%04d', now()->format('Y'), random_int(1, 9999)))
+                            ->default(fn (): string => sprintf('QUO-%s-%04d', now()->format('Y'), ((int) \App\Models\Quotation::query()->max('id')) + 1))
                             ->unique(ignoreRecord: true),
                         Select::make('vendor_id')
-                            ->options(User::query()->where('role', 'vendor')->pluck('name', 'id'))
+                            ->label('Vendor')
+                            ->options(function () use ($user): array {
+                                $query = User::query()
+                                    ->where('role', UserRole::VENDOR)
+                                    ->orderBy('name');
+
+                                if (($user?->role ?? null) === UserRole::ORG_ADMIN) {
+                                    $query->where('organization_id', $user?->organization_id);
+                                }
+
+                                if (($user?->role ?? null) === UserRole::VENDOR) {
+                                    $query->whereKey($user?->id);
+                                }
+
+                                return $query->pluck('name', 'id')->all();
+                            })
                             ->searchable()
                             ->preload()
+                            ->default(($user?->role ?? null) === UserRole::VENDOR ? $user?->id : null)
+                            ->disabled(($user?->role ?? null) === UserRole::VENDOR)
+                            ->dehydrated()
                             ->required(),
                         Select::make('distributor_id')
-                            ->options(User::query()->where('role', 'distributor')->pluck('name', 'id'))
+                            ->label('Distributor')
+                            ->options(function () use ($user): array {
+                                $query = User::query()
+                                    ->where('role', UserRole::DISTRIBUTOR)
+                                    ->orderBy('name');
+
+                                if (filled($user?->organization_id)) {
+                                    $query->where('organization_id', $user?->organization_id);
+                                }
+
+                                return $query->pluck('name', 'id')->all();
+                            })
                             ->searchable()
                             ->preload()
                             ->required(),
                         Select::make('status')
                             ->options([
-                                'draft' => 'Draft',
-                                'sent' => 'Sent',
-                                'negotiated' => 'Negotiated',
-                                'confirmed' => 'Confirmed',
-                                'rejected' => 'Rejected',
-                                'converted' => 'Converted',
+                                QuotationStatus::DRAFT => 'Draft',
+                                QuotationStatus::SENT => 'Sent',
+                                QuotationStatus::NEGOTIATED => 'Negotiating',
+                                QuotationStatus::CONFIRMED => 'Confirmed',
+                                QuotationStatus::REJECTED => 'Rejected',
+                                QuotationStatus::CONVERTED => 'Converted',
                             ])
-                            ->default('draft')
-                            ->required(),
+                            ->default(QuotationStatus::DRAFT)
+                            ->disabled()
+                            ->dehydrated()
+                            ->required()
+                            ->helperText('Status changes automatically when users click Send, Negotiate, Confirm, or Reject.'),
                         TextInput::make('subject'),
-                        DatePicker::make('valid_until'),
+                        DatePicker::make('valid_until')
+                            ->label('Valid Until')
+                            ->default(now()->addDays(7))
+                            ->minDate(now()->toDateString()),
                         Textarea::make('terms_conditions')->columnSpanFull(),
-                        Textarea::make('notes')->columnSpanFull(),
+                        Textarea::make('notes')
+                            ->label('Internal Notes')
+                            ->helperText('Use simple language for negotiation notes and follow-ups.')
+                            ->columnSpanFull(),
                     ])
                     ->columns(2),
                 Section::make('Amounts')

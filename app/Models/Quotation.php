@@ -54,4 +54,9 @@ class Quotation extends BaseModel
     {
         return $this->hasOne(Invoice::class);
     }
+
+    public function order(): HasOne
+    {
+        return $this->hasOne(Order::class);
+    }
 }

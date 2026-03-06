@@ -10,6 +10,7 @@ class Order extends BaseModel
 {
     protected $fillable = [
         'order_number',
+        'quotation_id',
         'consumer_id',
         'vendor_id',
         'invoice_id',
@@ -50,6 +51,11 @@ class Order extends BaseModel
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function quotation(): BelongsTo
+    {
+        return $this->belongsTo(Quotation::class);
     }
 
     public function items(): HasMany

@@ -61,7 +61,11 @@ class CommissionLedgerResource extends Resource
             return $query;
         }
 
-        return $query->whereHas('invoice.quotation.vendor', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+        return $query->where(function (Builder $ledgerQuery) use ($user): void {
+            $ledgerQuery
+                ->whereHas('invoice.quotation.vendor', fn (Builder $q) => $q->where('organization_id', $user->organization_id))
+                ->orWhereHas('invoice.order.vendor', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+        });
     }
 
     public static function form(Schema $schema): Schema
@@ -96,6 +100,5 @@ class CommissionLedgerResource extends Resource
         ];
     }
 }
-
 
 

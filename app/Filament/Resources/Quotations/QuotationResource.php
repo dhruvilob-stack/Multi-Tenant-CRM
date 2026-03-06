@@ -41,7 +41,7 @@ class QuotationResource extends Resource
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::VENDOR], true);
+        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::VENDOR], true);
     }
 
     public static function canEdit($record): bool
@@ -52,9 +52,6 @@ class QuotationResource extends Resource
         }
         if ($user?->role === UserRole::VENDOR) {
             return (int) $record->vendor_id === (int) $user->id;
-        }
-        if ($user?->role === UserRole::DISTRIBUTOR) {
-            return (int) $record->distributor_id === (int) $user->id;
         }
 
         return false;
@@ -115,7 +112,6 @@ class QuotationResource extends Resource
         ];
     }
 }
-
 
 
 

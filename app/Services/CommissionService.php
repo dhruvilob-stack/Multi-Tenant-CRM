@@ -8,6 +8,7 @@ use App\Models\InvoiceItem;
 use App\Models\MarginCommission;
 use App\Models\User;
 use App\Support\UserRole;
+use Illuminate\Database\Eloquent\Builder;
 
 class CommissionService
 {
@@ -30,9 +31,20 @@ class CommissionService
             return;
         }
 
-        $invoice->loadMissing('items.product.manufacturer', 'quotation.vendor', 'quotation.distributor', 'order.consumer');
+        $invoice->loadMissing('items.product.manufacturer', 'quotation.vendor', 'quotation.distributor', 'order.consumer', 'order.vendor');
+
+        $previousUserIds = CommissionLedger::query()
+            ->where('invoice_id', $invoice->id)
+            ->whereNotNull('from_user_id')
+            ->pluck('from_user_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
 
         CommissionLedger::query()->where('invoice_id', $invoice->id)->delete();
+
+        $itemTotalsSum = (float) $invoice->items->sum(fn (InvoiceItem $item): float => (float) $item->total);
+        $billedTotal = (float) ($invoice->order?->total_amount_billed ?? $invoice->grand_total ?? 0);
+        $basisMultiplier = $itemTotalsSum > 0 ? ($billedTotal / $itemTotalsSum) : 1.0;
 
         $aggregates = [];
 
@@ -59,7 +71,7 @@ class CommissionService
                 $rule = $this->resolveRuleForItem($item, $step['from'], $step['to']);
                 $commissionType = (string) ($rule?->commission_type ?? 'percentage');
                 $commissionRate = (float) ($rule?->commission_value ?? 0);
-                $basisAmount = (float) $item->total;
+                $basisAmount = (float) $item->total * $basisMultiplier;
                 $commissionAmount = $commissionType === 'fixed'
                     ? $commissionRate
                     : ($basisAmount * $commissionRate / 100);
@@ -113,16 +125,46 @@ class CommissionService
                 ->pluck('from_user_id')
                 ->filter(fn ($id): bool => is_numeric($id) && (int) $id > 0)
                 ->map(fn ($id): int => (int) $id)
+                ->merge($previousUserIds)
                 ->values()
         );
     }
 
+    public function clearForInvoice(Invoice $invoice): void
+    {
+        $fromUserIds = CommissionLedger::query()
+            ->where('invoice_id', $invoice->id)
+            ->whereNotNull('from_user_id')
+            ->pluck('from_user_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+
+        CommissionLedger::query()->where('invoice_id', $invoice->id)->delete();
+
+        if ($fromUserIds !== []) {
+            app(PartnerWalletService::class)->syncForUsers($fromUserIds);
+        }
+    }
+
+    public function syncForInvoice(Invoice $invoice): void
+    {
+        if ($invoice->order_id && in_array((string) $invoice->status, ['approved', 'paid'], true)) {
+            $this->generateForInvoice($invoice);
+            return;
+        }
+
+        $this->clearForInvoice($invoice);
+    }
+
     private function resolveRuleForItem(InvoiceItem $item, string $fromRole, string $toRole): ?MarginCommission
     {
+        $organizationId = (int) ($item->invoice?->quotation?->vendor?->organization_id ?? $item->invoice?->order?->vendor?->organization_id ?? 0);
+
         return MarginCommission::query()
             ->where('from_role', $fromRole)
             ->where('to_role', $toRole)
             ->where('is_active', true)
+            ->when($organizationId > 0, fn (Builder $query): Builder => $query->where('organization_id', $organizationId))
             ->where(function ($query) use ($item): void {
                 $query->orWhere(function ($q) use ($item): void {
                     $q->where('rule_type', 'product')
@@ -147,9 +189,9 @@ class CommissionService
     private function resolveUsers(Invoice $invoice, InvoiceItem $item, string $fromRole, string $toRole): array
     {
         $manufacturerId = $item->product?->manufacturer?->id;
-        $distributorId = $invoice->quotation?->distributor_id;
-        $vendorId = $invoice->quotation?->vendor_id;
+        $vendorId = $invoice->quotation?->vendor_id ?: $invoice->order?->vendor_id;
         $consumerId = $invoice->order?->consumer_id;
+        $distributorId = $invoice->quotation?->distributor_id ?: $this->resolveDistributorId($invoice, $vendorId);
 
         $map = [
             UserRole::MANUFACTURER => $manufacturerId,
@@ -170,6 +212,36 @@ class CommissionService
             return null;
         }
 
-        return User::query()->whereKey($userId)->exists() ? (int) $userId : null;
+        return User::withoutGlobalScopes()->whereKey($userId)->exists() ? (int) $userId : null;
+    }
+
+    private function resolveDistributorId(Invoice $invoice, mixed $vendorId): ?int
+    {
+        $vendorId = is_numeric($vendorId) ? (int) $vendorId : null;
+        if (! $vendorId) {
+            return null;
+        }
+
+        /** @var User|null $vendor */
+        $vendor = User::withoutGlobalScopes()->find($vendorId);
+        if (! $vendor) {
+            return null;
+        }
+
+        $parent = User::withoutGlobalScopes()->find($vendor->parent_id);
+        if ($parent && $parent->role === UserRole::DISTRIBUTOR) {
+            return (int) $parent->id;
+        }
+
+        $orgId = (int) ($invoice->quotation?->vendor?->organization_id ?? $invoice->order?->vendor?->organization_id ?? $vendor->organization_id ?? 0);
+        if ($orgId <= 0) {
+            return null;
+        }
+
+        return User::withoutGlobalScopes()
+            ->where('role', UserRole::DISTRIBUTOR)
+            ->where('organization_id', $orgId)
+            ->orderBy('id')
+            ->value('id');
     }
 }

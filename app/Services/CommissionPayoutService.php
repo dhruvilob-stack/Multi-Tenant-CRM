@@ -60,9 +60,15 @@ class CommissionPayoutService
                 throw ValidationException::withMessages(['user_id' => 'No pending commission entries available for this partner.']);
             }
 
+            if ($targetAmount > 0 && $targetAmount > $partnerPending) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Requested payout amount exceeds available commission balance of $'.number_format($partnerPending, 2).'.',
+                ]);
+            }
+
             $selected = collect();
             $running = 0.0;
-            $remainingTarget = $targetAmount > 0 ? min($targetAmount, $partnerPending) : $partnerPending;
+            $remainingTarget = $targetAmount > 0 ? $targetAmount : $partnerPending;
 
             foreach ($entries as $entry) {
                 $amount = max((float) $entry->commission_amount - (float) $entry->paid_amount, 0);

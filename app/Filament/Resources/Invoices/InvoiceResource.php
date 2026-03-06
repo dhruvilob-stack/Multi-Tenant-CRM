@@ -62,19 +62,35 @@ class InvoiceResource extends Resource
             return $query;
         }
         if ($user->role === UserRole::ORG_ADMIN) {
-            return $query->whereHas('quotation.vendor', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+            return $query->where(function (Builder $invoiceQuery) use ($user): void {
+                $invoiceQuery
+                    ->whereHas('quotation.vendor', fn (Builder $q) => $q->where('organization_id', $user->organization_id))
+                    ->orWhereHas('order.vendor', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+            });
         }
         if ($user->role === UserRole::DISTRIBUTOR) {
-            return $query->whereHas('quotation', fn (Builder $q) => $q->where('distributor_id', $user->id));
+            return $query->where(function (Builder $invoiceQuery) use ($user): void {
+                $invoiceQuery
+                    ->whereHas('quotation', fn (Builder $q) => $q->where('distributor_id', $user->id))
+                    ->orWhereHas('order', fn (Builder $q) => $q->where('consumer_id', $user->id));
+            });
         }
         if ($user->role === UserRole::VENDOR) {
-            return $query->whereHas('quotation', fn (Builder $q) => $q->where('vendor_id', $user->id));
+            return $query->where(function (Builder $invoiceQuery) use ($user): void {
+                $invoiceQuery
+                    ->whereHas('quotation', fn (Builder $q) => $q->where('vendor_id', $user->id))
+                    ->orWhereHas('order', fn (Builder $q) => $q->where('vendor_id', $user->id));
+            });
         }
         if ($user->role === UserRole::CONSUMER) {
             return $query->whereHas('order', fn (Builder $q) => $q->where('consumer_id', $user->id));
         }
         if ($user->role === UserRole::MANUFACTURER) {
-            return $query->whereHas('quotation.vendor', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+            return $query->where(function (Builder $invoiceQuery) use ($user): void {
+                $invoiceQuery
+                    ->whereHas('quotation.vendor', fn (Builder $q) => $q->where('organization_id', $user->organization_id))
+                    ->orWhereHas('order.vendor', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
+            });
         }
 
         return $query->whereRaw('1=0');
@@ -112,7 +128,6 @@ class InvoiceResource extends Resource
         ];
     }
 }
-
 
 
 

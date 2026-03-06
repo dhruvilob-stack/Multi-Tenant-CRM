@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CommissionPayouts\Tables;
 use App\Models\CommissionLedger;
 use App\Models\CommissionPayout;
 use App\Services\CommissionPayoutService;
+use App\Support\UserRole;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -71,11 +72,13 @@ class CommissionPayoutsTable
             ->recordActions([
                 ActionGroup::make([
                     ViewAction::make(),
-                    EditAction::make(),
+                    EditAction::make()
+                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
                     Action::make('markCompleted')
                         ->label('Mark Completed')
                         ->icon('heroicon-o-check-circle')
-                        ->visible(fn (CommissionPayout $record): bool => (string) $record->status !== 'completed')
+                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN)
+                        ->hidden(fn (CommissionPayout $record): bool => (string) $record->status === 'completed')
                         ->requiresConfirmation()
                         ->action(function (CommissionPayout $record): void {
                             app(CommissionPayoutService::class)->markCompleted($record);
@@ -85,7 +88,8 @@ class CommissionPayoutsTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
                 ]),
             ]);
     }

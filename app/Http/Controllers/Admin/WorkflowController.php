@@ -90,8 +90,13 @@ class WorkflowController extends Controller
 
     public function confirmQuotation(int $id, QuotationWorkflowService $service): JsonResponse
     {
-        $invoice = $service->confirm(Quotation::query()->findOrFail($id));
-        return response()->json(['message' => 'Quotation confirmed', 'invoice_id' => $invoice->id]);
+        $order = $service->convertToOrder(Quotation::query()->findOrFail($id));
+
+        return response()->json([
+            'message' => 'Quotation confirmed and converted to order',
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+        ]);
     }
 
     public function rejectQuotation(int $id, QuotationWorkflowService $service): JsonResponse
