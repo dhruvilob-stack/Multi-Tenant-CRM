@@ -2,27 +2,30 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Invoice;
-use App\Models\Order;
-use App\Models\Quotation;
+use App\Filament\Resources\Categories\CategoryResource;
+use App\Filament\Widgets\OrderValueDistributionChart;
+use App\Filament\Widgets\OrdersYearOverYearChart;
+use App\Filament\Widgets\RevenueTrendChart;
+use App\Filament\Widgets\SalesReportKpiStats;
+use App\Filament\Widgets\SalesReportRecentOrdersTable;
+use App\Filament\Widgets\TopProductsByRevenueChart;
 use App\Support\UserRole;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Pages\Page;
+use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class ReportsSales extends Page
 {
+    use HasFiltersForm;
+
     protected string $view = 'filament.pages.reports-sales';
     protected static ?string $slug = 'reports/sales';
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedChartBar;
-
-    public array $stats = [];
-    public array $recentOrders = [];
-
-    public function mount(): void
-    {
-        $this->loadData();
-    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -43,69 +46,88 @@ class ReportsSales extends Page
         ], true);
     }
 
-    private function loadData(): void
+    public function filtersForm(Schema $schema): Schema
     {
-        $this->stats = [
-            'orders_total' => $this->ordersQuery()->count(),
-            'orders_delivered' => (clone $this->ordersQuery())->where('status', 'delivered')->count(),
-            'quotations_total' => $this->quotationsQuery()->count(),
-            'quotations_converted' => (clone $this->quotationsQuery())->where('status', 'converted')->count(),
-            'invoices_total_amount' => round((float) $this->invoicesQuery()->sum('grand_total'), 2),
-            'invoices_paid_amount' => round((float) (clone $this->invoicesQuery())->where('status', 'paid')->sum('received_amount'), 2),
-        ];
+        return $schema
+            ->components([
+                Section::make()
+                    ->schema([
+                        DatePicker::make('startDate')
+                            ->label('From date')
+                            ->maxDate(fn () => now()),
+                        DatePicker::make('endDate')
+                            ->label('To date')
+                            ->maxDate(now()),
+                        Select::make('orderStatuses')
+                            ->label('Order status')
+                            ->options(fn (): array => $this->getOrderStatusOptions())
+                            ->multiple()
+                            ->searchable(),
+                        Select::make('productCategory')
+                            ->label('Product category')
+                            ->options(fn (): array => $this->getCategoryOptions())
+                            ->searchable(),
+                    ])
+                    ->columns(4)
+                    ->columnSpanFull(),
+            ]);
+    }
 
-        $this->recentOrders = $this->ordersQuery()
-            ->with(['vendor:id,name', 'consumer:id,name'])
-            ->latest('id')
-            ->limit(10)
-            ->get()
-            ->map(fn (Order $order): array => [
-                'order_number' => $order->order_number,
-                'vendor' => $order->vendor?->name,
-                'consumer' => $order->consumer?->name,
-                'status' => $order->status,
-                'total' => (float) $order->total_amount,
-                'created_at' => optional($order->created_at)?->toDateTimeString(),
-            ])
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            SalesReportKpiStats::class,
+            RevenueTrendChart::class,
+            OrdersYearOverYearChart::class,
+            TopProductsByRevenueChart::class,
+            OrderValueDistributionChart::class,
+            SalesReportRecentOrdersTable::class,
+        ];
+    }
+
+    public function getHeaderWidgetsColumns(): int|array
+    {
+        return [
+            'default' => 1,
+            'md' => 2,
+            'xl' => 3,
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function getOrderStatusOptions(): array
+    {
+        $statuses = collect([
+            'new',
+            'pending',
+            'processing',
+            'packed',
+            'shipped',
+            'delivered',
+            'cancelled',
+            'refunded',
+            'failed',
+        ]);
+
+        return $statuses
+            ->mapWithKeys(fn (string $status): array => [$status => Str::headline($status)])
             ->all();
     }
 
-    private function ordersQuery(): Builder
+    /**
+     * @return array<int, string>
+     */
+    protected function getCategoryOptions(): array
     {
-        $user = auth()->user();
-
-        $query = Order::query()->whereHas('vendor', fn (Builder $q) => $q->where('organization_id', $user?->organization_id));
-
-        if ($user?->role === UserRole::DISTRIBUTOR) {
-            $query->whereHas('vendor', fn (Builder $q) => $q->where('parent_id', $user->id));
+        if (! CategoryResource::canViewAny()) {
+            return [];
         }
 
-        return $query;
-    }
-
-    private function quotationsQuery(): Builder
-    {
-        $user = auth()->user();
-
-        $query = Quotation::query()->whereHas('vendor', fn (Builder $q) => $q->where('organization_id', $user?->organization_id));
-
-        if ($user?->role === UserRole::DISTRIBUTOR) {
-            $query->where('distributor_id', $user->id);
-        }
-
-        return $query;
-    }
-
-    private function invoicesQuery(): Builder
-    {
-        $user = auth()->user();
-
-        $query = Invoice::query()->whereHas('quotation.vendor', fn (Builder $q) => $q->where('organization_id', $user?->organization_id));
-
-        if ($user?->role === UserRole::DISTRIBUTOR) {
-            $query->whereHas('quotation', fn (Builder $q) => $q->where('distributor_id', $user->id));
-        }
-
-        return $query;
+        return CategoryResource::getEloquentQuery()
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
     }
 }

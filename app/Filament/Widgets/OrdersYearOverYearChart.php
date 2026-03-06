@@ -14,6 +14,7 @@ class OrdersYearOverYearChart extends ChartWidget
     use ResolvesPanelResourceAccess;
 
     protected ?string $heading = 'Orders Year-over-Year';
+    protected ?string $description = 'Compares monthly order counts between the last 12 months and the 12 months before that.';
 
     protected static ?int $sort = 1;
 

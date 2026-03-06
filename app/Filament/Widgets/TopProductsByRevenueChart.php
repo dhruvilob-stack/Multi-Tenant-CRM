@@ -17,6 +17,7 @@ class TopProductsByRevenueChart extends ChartWidget
     use ResolvesPanelResourceAccess;
 
     protected ?string $heading = 'Top Products by Revenue';
+    protected ?string $description = 'Shows which products generated the highest sales value in the selected filters.';
 
     protected static ?int $sort = 4;
 

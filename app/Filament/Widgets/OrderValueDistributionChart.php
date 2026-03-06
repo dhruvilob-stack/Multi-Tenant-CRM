@@ -14,6 +14,7 @@ class OrderValueDistributionChart extends ChartWidget
     use ResolvesPanelResourceAccess;
 
     protected ?string $heading = 'Order Value Distribution';
+    protected ?string $description = 'Shows how many orders fall into each order amount range.';
 
     protected static ?int $sort = 6;
 
