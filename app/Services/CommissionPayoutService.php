@@ -8,12 +8,19 @@ use App\Models\CommissionPayoutItem;
 use App\Models\User;
 use App\Support\UserRole;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class CommissionPayoutService
 {
     public function create(array $data, User $actor): CommissionPayout
     {
+        if (! Schema::hasTable('commission_payout_items') || ! Schema::hasColumn('commission_ledger', 'paid_amount')) {
+            throw ValidationException::withMessages([
+                'user_id' => 'Payout system migration is pending. Please run: php artisan migrate',
+            ]);
+        }
+
         $partnerId = (int) ($data['user_id'] ?? 0);
         $partner = User::query()->find($partnerId);
 
@@ -27,7 +34,6 @@ class CommissionPayoutService
             $entries = CommissionLedger::query()
                 ->where('from_user_id', $partner->id)
                 ->whereNotIn('status', ['rejected'])
-                ->whereColumn('commission_amount', '>', 'paid_amount')
                 ->whereDoesntHave('payoutItems.payout', fn ($q) => $q->where('status', 'processing'))
                 ->orderBy('id')
                 ->get(['id', 'commission_amount', 'paid_amount', 'status']);
@@ -36,9 +42,27 @@ class CommissionPayoutService
                 throw ValidationException::withMessages(['user_id' => 'No pending commission entries available for this partner.']);
             }
 
+            $earned = (float) CommissionLedger::query()
+                ->where('from_user_id', $partner->id)
+                ->whereNotIn('status', ['rejected'])
+                ->sum('commission_amount');
+
+            $alreadyPaidToPartner = (float) CommissionPayout::query()
+                ->where('user_id', $partner->id)
+                ->when(
+                    Schema::hasColumn('commission_payouts', 'status'),
+                    fn ($q) => $q->where('status', 'completed')
+                )
+                ->sum('amount');
+
+            $partnerPending = max($earned - $alreadyPaidToPartner, 0);
+            if ($partnerPending <= 0) {
+                throw ValidationException::withMessages(['user_id' => 'No pending commission entries available for this partner.']);
+            }
+
             $selected = collect();
             $running = 0.0;
-            $remainingTarget = $targetAmount > 0 ? $targetAmount : null;
+            $remainingTarget = $targetAmount > 0 ? min($targetAmount, $partnerPending) : $partnerPending;
 
             foreach ($entries as $entry) {
                 $amount = max((float) $entry->commission_amount - (float) $entry->paid_amount, 0);
@@ -47,13 +71,11 @@ class CommissionPayoutService
                 }
 
                 $allocated = $amount;
-                if ($remainingTarget !== null) {
-                    if ($remainingTarget <= 0) {
-                        break;
-                    }
-                    $allocated = min($allocated, $remainingTarget);
-                    $remainingTarget -= $allocated;
+                if ($remainingTarget <= 0) {
+                    break;
                 }
+                $allocated = min($allocated, $remainingTarget);
+                $remainingTarget -= $allocated;
 
                 if ($allocated <= 0) {
                     continue;
@@ -71,20 +93,37 @@ class CommissionPayoutService
             }
 
             $currency = trim((string) ($data['currency'] ?? 'USD')) ?: 'USD';
-            $payout = CommissionPayout::query()->create([
-                'organization_id' => $actor->organization_id,
-                'payout_number' => $this->nextPayoutNumber(),
+            $payload = [
                 'user_id' => $partner->id,
                 'amount' => round($running, 2),
-                'status' => (string) ($data['status'] ?? 'processing'),
-                'payment_method' => (string) ($data['payment_method'] ?? 'bank_transfer'),
-                'currency' => $currency,
-                'created_by' => $actor->id,
                 'reference' => (string) ($data['reference'] ?? ''),
                 'notes' => (string) ($data['notes'] ?? ''),
                 'paid_at' => null,
-                'processed_at' => null,
-            ]);
+            ];
+
+            if (Schema::hasColumn('commission_payouts', 'organization_id')) {
+                $payload['organization_id'] = $actor->organization_id;
+            }
+            if (Schema::hasColumn('commission_payouts', 'payout_number')) {
+                $payload['payout_number'] = $this->nextPayoutNumber();
+            }
+            if (Schema::hasColumn('commission_payouts', 'status')) {
+                $payload['status'] = (string) ($data['status'] ?? 'processing');
+            }
+            if (Schema::hasColumn('commission_payouts', 'payment_method')) {
+                $payload['payment_method'] = (string) ($data['payment_method'] ?? 'bank_transfer');
+            }
+            if (Schema::hasColumn('commission_payouts', 'currency')) {
+                $payload['currency'] = $currency;
+            }
+            if (Schema::hasColumn('commission_payouts', 'created_by')) {
+                $payload['created_by'] = $actor->id;
+            }
+            if (Schema::hasColumn('commission_payouts', 'processed_at')) {
+                $payload['processed_at'] = null;
+            }
+
+            $payout = CommissionPayout::query()->create($payload);
 
             foreach ($selected as $row) {
                 /** @var CommissionLedger $entry */
@@ -101,7 +140,7 @@ class CommissionPayoutService
                 }
             }
 
-            if ((string) $payout->status === 'completed') {
+            if (Schema::hasColumn('commission_payouts', 'status') && (string) $payout->status === 'completed') {
                 $this->markCompleted($payout);
             } else {
                 app(PartnerWalletService::class)->syncForUser($partner->id);

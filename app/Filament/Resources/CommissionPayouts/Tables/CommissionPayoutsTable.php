@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CommissionPayouts\Tables;
 
+use App\Models\CommissionLedger;
 use App\Models\CommissionPayout;
 use App\Services\CommissionPayoutService;
 use Filament\Actions\Action;
@@ -13,6 +14,7 @@ use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 
 class CommissionPayoutsTable
 {
@@ -25,11 +27,36 @@ class CommissionPayoutsTable
                     ->searchable(),
                 TextColumn::make('user.name')->label('Partner'),
                 TextColumn::make('user.role')->label('Role')->badge(),
-                TextColumn::make('user.partnerWallet.pending_balance')
+                TextColumn::make('wallet_pending')
                     ->label('Wallet Pending')
+                    ->state(function (CommissionPayout $record): float {
+                        $earned = (float) CommissionLedger::query()
+                            ->where('from_user_id', (int) $record->user_id)
+                            ->whereNotIn('status', ['rejected'])
+                            ->sum('commission_amount');
+
+                        $paid = (float) CommissionPayout::query()
+                            ->where('user_id', (int) $record->user_id)
+                            ->when(
+                                SchemaFacade::hasColumn('commission_payouts', 'status'),
+                                fn ($q) => $q->where('status', 'completed')
+                            )
+                            ->sum('amount');
+
+                        return round(max($earned - $paid, 0), 2);
+                    })
                     ->money('USD'),
-                TextColumn::make('user.partnerWallet.total_paid')
+                TextColumn::make('wallet_paid')
                     ->label('Wallet Paid')
+                    ->state(function (CommissionPayout $record): float {
+                        return round((float) CommissionPayout::query()
+                            ->where('user_id', (int) $record->user_id)
+                            ->when(
+                                SchemaFacade::hasColumn('commission_payouts', 'status'),
+                                fn ($q) => $q->where('status', 'completed')
+                            )
+                            ->sum('amount'), 2);
+                    })
                     ->money('USD'),
                 TextColumn::make('amount')->money(fn (CommissionPayout $record): string => (string) ($record->currency ?: 'USD')),
                 TextColumn::make('status')->badge(),

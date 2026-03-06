@@ -53,10 +53,17 @@ class CommissionPayoutForm
                         $pending = (float) CommissionLedger::query()
                             ->where('from_user_id', $partnerId)
                             ->whereNotIn('status', ['rejected'])
-                            ->whereColumn('commission_amount', '>', 'paid_amount')
-                            ->whereDoesntHave('payoutItems.payout', fn ($q) => $q->where('status', 'processing'))
-                            ->selectRaw('COALESCE(SUM(commission_amount - paid_amount), 0) as pending_total')
-                            ->value('pending_total');
+                            ->sum('commission_amount');
+
+                        $paid = (float) CommissionPayout::query()
+                            ->where('user_id', $partnerId)
+                            ->when(
+                                SchemaFacade::hasColumn('commission_payouts', 'status'),
+                                fn ($q) => $q->where('status', 'completed')
+                            )
+                            ->sum('amount');
+
+                        $pending = max($pending - $paid, 0);
 
                         return '$'.number_format($pending, 2);
                     }),

@@ -6,6 +6,7 @@ use App\Models\CommissionLedger;
 use App\Models\PartnerWallet;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class PartnerWalletService
 {
@@ -21,10 +22,13 @@ class PartnerWalletService
             ->whereNotIn('status', ['rejected'])
             ->sum('commission_amount');
 
-        $paid = (float) CommissionLedger::query()
-            ->where('from_user_id', $userId)
-            ->whereNotIn('status', ['rejected'])
-            ->sum('paid_amount');
+        $paid = (float) CommissionPayout::query()
+            ->where('user_id', $userId)
+            ->when(
+                Schema::hasColumn('commission_payouts', 'status'),
+                fn ($q) => $q->where('status', 'completed')
+            )
+            ->sum('amount');
 
         $pending = max($totalEarned - $paid, 0);
 

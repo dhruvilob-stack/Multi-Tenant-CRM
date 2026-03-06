@@ -17,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 
 class CommissionPayoutResource extends Resource
 {
@@ -58,6 +59,10 @@ class CommissionPayoutResource extends Resource
         $user = auth()->user();
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;
+        }
+
+        if (! SchemaFacade::hasColumn('commission_payouts', 'organization_id')) {
+            return $query->whereHas('user', fn (Builder $q) => $q->where('organization_id', $user->organization_id));
         }
 
         return $query->where(function (Builder $scoped) use ($user): void {
@@ -103,6 +108,5 @@ class CommissionPayoutResource extends Resource
         ];
     }
 }
-
 
 
