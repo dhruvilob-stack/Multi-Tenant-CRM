@@ -2,25 +2,27 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\Categories\CategoryResource;
+use App\Filament\Widgets\InventoryLowStockTable;
+use App\Filament\Widgets\InventoryReportKpiStats;
+use App\Filament\Widgets\InventoryStockStatusChart;
 use App\Models\Inventory;
 use App\Support\UserRole;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Pages\Page;
+use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Database\Eloquent\Builder;
 
 class ReportsInventory extends Page
 {
+    use HasFiltersForm;
+
     protected string $view = 'filament.pages.reports-inventory';
     protected static ?string $slug = 'reports/inventory';
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedChartBarSquare;
-
-    public array $stats = [];
-    public array $lowStock = [];
-
-    public function mount(): void
-    {
-        $this->loadData();
-    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -37,40 +39,79 @@ class ReportsInventory extends Page
         return in_array(auth()->user()?->role, [UserRole::ORG_ADMIN], true);
     }
 
-    private function loadData(): void
+    public function persistsFiltersInSession(): bool
     {
-        $query = $this->inventoryQuery();
+        return false;
+    }
 
-        $this->stats = [
-            'records' => (clone $query)->count(),
-            'total_available' => round((float) (clone $query)->sum('quantity_available'), 3),
-            'total_reserved' => round((float) (clone $query)->sum('quantity_reserved'), 3),
-            'unique_products' => (clone $query)->distinct('product_id')->count('product_id'),
+    public function filtersForm(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make()
+                    ->schema([
+                        Select::make('productCategory')
+                            ->label('Product category')
+                            ->options(fn (): array => $this->getCategoryOptions())
+                            ->searchable(),
+                        Select::make('warehouseLocation')
+                            ->label('Warehouse location')
+                            ->options(fn (): array => $this->getWarehouseOptions())
+                            ->searchable(),
+                        Toggle::make('onlyLowStock')
+                            ->label('Only low stock')
+                            ->default(false)
+                            ->inline(false),
+                    ])
+                    ->columns(3)
+                    ->columnSpanFull(),
+            ]);
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            InventoryReportKpiStats::class,
+            InventoryStockStatusChart::class,
+            InventoryLowStockTable::class,
         ];
+    }
 
-        $threshold = (float) (((array) (auth()->user()?->organization?->settings ?? []))['system']['low_stock_threshold'] ?? 5);
+    public function getHeaderWidgetsColumns(): int|array
+    {
+        return [
+            'default' => 1,
+            'md' => 2,
+            'xl' => 3,
+        ];
+    }
 
-        $this->lowStock = (clone $query)
-            ->with('product:id,name,sku')
-            ->where('quantity_available', '<=', $threshold)
-            ->orderBy('quantity_available')
-            ->limit(20)
-            ->get()
-            ->map(fn (Inventory $inventory): array => [
-                'product' => $inventory->product?->name,
-                'sku' => $inventory->product?->sku,
-                'available' => (float) $inventory->quantity_available,
-                'reserved' => (float) $inventory->quantity_reserved,
-                'location' => $inventory->warehouse_location,
-            ])
+    /**
+     * @return array<int, string>
+     */
+    protected function getCategoryOptions(): array
+    {
+        if (! CategoryResource::canViewAny()) {
+            return [];
+        }
+
+        return CategoryResource::getEloquentQuery()
+            ->orderBy('name')
+            ->pluck('name', 'id')
             ->all();
     }
 
-    private function inventoryQuery(): Builder
+    /**
+     * @return array<string, string>
+     */
+    protected function getWarehouseOptions(): array
     {
-        $user = auth()->user();
-
         return Inventory::query()
-            ->whereHas('product.manufacturer', fn (Builder $q) => $q->where('organization_id', $user?->organization_id));
+            ->whereNotNull('warehouse_location')
+            ->where('warehouse_location', '!=', '')
+            ->distinct()
+            ->orderBy('warehouse_location')
+            ->pluck('warehouse_location', 'warehouse_location')
+            ->all();
     }
 }
