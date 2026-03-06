@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Orders\Tables;
 use App\Filament\Support\ResourceDataExchange;
 use App\Models\Order;
 use App\Services\OrderWorkflowService;
+use App\Support\SystemSettings;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
@@ -41,7 +42,7 @@ class OrdersTable
                 TextColumn::make('created_at')->label('Order date')->date()->sortable(),
                 TextColumn::make('total_amount_billed')
                     ->label('Total Amount Billed')
-                    ->money(fn(Order $record): string => (string) ($record->currency ?? 'EUR'))
+                    ->money(fn(Order $record): string => (string) ($record->currency ?? SystemSettings::currencyForCurrentUser()))
                     ->sortable(),
             ])
             ->filters([

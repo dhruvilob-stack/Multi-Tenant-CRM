@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CommissionPayouts\Schemas;
 use App\Models\CommissionLedger;
 use App\Models\CommissionPayout;
 use App\Models\User;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
@@ -71,8 +72,9 @@ class CommissionPayoutForm
                     ->content(function (Get $get): string {
                         $partnerId = (int) ($get('user_id') ?? 0);
                         $pending = self::pendingForPartner($partnerId);
+                        $currency = SystemSettings::currencyForCurrentUser();
 
-                        return '$'.number_format($pending, 2);
+                        return number_format($pending, 2).' '.$currency;
                     }),
                 TextInput::make('amount')
                     ->label('Amount (Optional)')
@@ -99,7 +101,7 @@ class CommissionPayoutForm
                     ->default('processing')
                     ->required(),
                 TextInput::make('currency')
-                    ->default('USD')
+                    ->default(fn (): string => SystemSettings::currencyForCurrentUser())
                     ->maxLength(10)
                     ->required(),
                 TextInput::make('reference'),

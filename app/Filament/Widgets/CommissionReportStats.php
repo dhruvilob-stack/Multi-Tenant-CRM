@@ -4,10 +4,12 @@ namespace App\Filament\Widgets;
 
 use App\Models\CommissionLedger;
 use App\Models\CommissionPayout;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Number;
 use Illuminate\Support\Facades\Schema;
 
 class CommissionReportStats extends StatsOverviewWidget
@@ -35,15 +37,16 @@ class CommissionReportStats extends StatsOverviewWidget
         $totalPaid = (float) (clone $completedPayoutsQuery)->sum('amount');
         $pending = max($totalEarned - $totalPaid, 0);
         $completedPayouts = (clone $completedPayoutsQuery)->count();
+        $currency = SystemSettings::currencyForCurrentUser();
 
         return [
-            Stat::make('Total Commission Earned', '$'.number_format($totalEarned, 2))
+            Stat::make('Total Commission Earned', Number::currency($totalEarned, $currency))
                 ->description('All generated commission from successful invoices')
                 ->color('success'),
-            Stat::make('Pending To Pay', '$'.number_format($pending, 2))
+            Stat::make('Pending To Pay', Number::currency($pending, $currency))
                 ->description('Unpaid commission liability')
                 ->color($pending > 0 ? 'warning' : 'success'),
-            Stat::make('Total Paid', '$'.number_format($totalPaid, 2))
+            Stat::make('Total Paid', Number::currency($totalPaid, $currency))
                 ->description($completedPayouts.' payouts completed')
                 ->color('primary'),
             Stat::make('Ledger Entries', (string) $totalEntries)

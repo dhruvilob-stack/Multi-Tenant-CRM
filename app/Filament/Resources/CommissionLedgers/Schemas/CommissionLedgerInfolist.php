@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\CommissionLedgers\Schemas;
 
+use App\Support\SystemSettings;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -51,13 +52,13 @@ class CommissionLedgerInfolist
                     ->schema([
                         TextEntry::make('basis_amount')
                             ->label('Basis Amount')
-                            ->money('USD'),
+                            ->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                         TextEntry::make('commission_rate')
                             ->label('Commission Rate')
                             ->suffix('%'),
                         TextEntry::make('commission_amount')
                             ->label('Commission Amount')
-                            ->money('USD')
+                            ->money(fn (): string => SystemSettings::currencyForCurrentUser())
                             ->weight('bold'),
                     ])
                     ->columns(3),

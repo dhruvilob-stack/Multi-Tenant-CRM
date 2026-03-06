@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Shop\Products\Tables;
 use App\Filament\Resources\Shop\Products\ProductResource;
 use App\Filament\Support\ResourceDataExchange;
 use App\Models\Product;
+use App\Support\SystemSettings;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
@@ -60,7 +61,7 @@ class ProductsTable
                     ->toggleable(),
 
                 TextColumn::make('price')
-                    ->money('USD')
+                    ->money(fn (): string => SystemSettings::currencyForCurrentUser())
                     ->sortable(),
 
                 TextColumn::make('sku')

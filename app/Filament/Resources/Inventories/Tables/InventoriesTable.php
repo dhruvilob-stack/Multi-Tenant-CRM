@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Inventories\Tables;
 
+use App\Support\SystemSettings;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -25,7 +26,7 @@ class InventoriesTable
                 TextColumn::make('quantity_available')->numeric(),
                 TextColumn::make('security_stock')->numeric(),
                 TextColumn::make('quantity_reserved')->numeric(),
-                TextColumn::make('unit_price')->money('USD'),
+                TextColumn::make('unit_price')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                 TextColumn::make('discount_percent')->suffix('%'),
                 TextColumn::make('warehouse_location'),
             ])

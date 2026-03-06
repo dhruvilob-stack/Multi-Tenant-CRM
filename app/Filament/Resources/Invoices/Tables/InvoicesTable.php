@@ -20,7 +20,7 @@ class InvoicesTable
                 TextColumn::make('invoice_number')->searchable(),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('currency'),
-                TextColumn::make('grand_total')->money('USD'),
+                TextColumn::make('grand_total')->money(fn (Invoice $record): string => (string) ($record->currency ?: 'USD')),
                 TextColumn::make('due_date')->date(),
             ])
             ->filters([

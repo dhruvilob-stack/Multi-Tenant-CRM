@@ -6,6 +6,7 @@ use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Resources\Orders\Schemas\OrderForm;
 use App\Models\Order;
 use App\Models\User;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -54,7 +55,7 @@ class CreateOrder extends CreateRecord
 
         $data['status'] = 'new';
         $data['payment_status'] = (string) ($data['payment_status'] ?? 'pending');
-        $data['currency'] = (string) ($data['currency'] ?? 'EUR');
+        $data['currency'] = (string) ($data['currency'] ?? SystemSettings::currencyForCurrentUser());
         $data['payment_reference_number'] = filled($data['payment_reference_number'] ?? null)
             ? (string) $data['payment_reference_number']
             : null;

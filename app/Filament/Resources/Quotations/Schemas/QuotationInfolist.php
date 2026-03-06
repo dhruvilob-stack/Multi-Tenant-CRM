@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Quotations\Schemas;
 
 use App\Models\Quotation;
 use App\Support\QuotationStatus;
+use App\Support\SystemSettings;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -26,7 +27,7 @@ class QuotationInfolist
                             ->badge()
                             ->formatStateUsing(fn (?string $state): string => self::statusLabel($state)),
                         TextEntry::make('valid_until')->label('Valid Until')->date(),
-                        TextEntry::make('grand_total')->label('Grand Total')->money('USD'),
+                        TextEntry::make('grand_total')->label('Grand Total')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                         TextEntry::make('order.order_number')
                             ->label('Converted Order')
                             ->placeholder('Not converted yet'),
@@ -49,9 +50,9 @@ class QuotationInfolist
                             ->schema([
                                 TextEntry::make('item_name')->label('Product'),
                                 TextEntry::make('qty')->label('Quantity')->numeric(),
-                                TextEntry::make('selling_price')->label('Price/Unit')->money('USD'),
+                                TextEntry::make('selling_price')->label('Price/Unit')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                                 TextEntry::make('discount_percent')->label('Discount')->suffix('%'),
-                                TextEntry::make('total')->label('Total')->money('USD'),
+                                TextEntry::make('total')->label('Total')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                             ])
                             ->columns(5),
                     ]),

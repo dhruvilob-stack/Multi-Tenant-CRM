@@ -6,10 +6,12 @@ use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Resources\Quotations\QuotationResource;
 use App\Filament\Widgets\Concerns\ResolvesPanelResourceAccess;
+use App\Support\SystemSettings;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Number;
 
 class SalesReportKpiStats extends StatsOverviewWidget
 {
@@ -67,10 +69,10 @@ class SalesReportKpiStats extends StatsOverviewWidget
             Stat::make('Converted Quotations', (string) $convertedQuotations)
                 ->description('Quotations turned into confirmed deals')
                 ->color('info'),
-            Stat::make('Billed Revenue', '$'.number_format($billedRevenue, 2))
+            Stat::make('Billed Revenue', Number::currency($billedRevenue, SystemSettings::currencyForCurrentUser()))
                 ->description('Total invoiced amount')
                 ->color('warning'),
-            Stat::make('Collected Revenue', '$'.number_format($collectedRevenue, 2))
+            Stat::make('Collected Revenue', Number::currency($collectedRevenue, SystemSettings::currencyForCurrentUser()))
                 ->description('Amount already received')
                 ->color('success'),
         ];

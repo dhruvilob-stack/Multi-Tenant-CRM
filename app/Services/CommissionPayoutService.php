@@ -6,6 +6,7 @@ use App\Models\CommissionLedger;
 use App\Models\CommissionPayout;
 use App\Models\CommissionPayoutItem;
 use App\Models\User;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -98,7 +99,8 @@ class CommissionPayoutService
                 throw ValidationException::withMessages(['amount' => 'Requested amount is not available in pending commission entries.']);
             }
 
-            $currency = trim((string) ($data['currency'] ?? 'USD')) ?: 'USD';
+            $defaultCurrency = SystemSettings::currencyForOrganization($actor->organization);
+            $currency = trim((string) ($data['currency'] ?? $defaultCurrency)) ?: $defaultCurrency;
             $payload = [
                 'user_id' => $partner->id,
                 'amount' => round($running, 2),

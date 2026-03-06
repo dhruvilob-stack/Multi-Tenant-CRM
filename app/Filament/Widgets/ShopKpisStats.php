@@ -6,10 +6,12 @@ use App\Filament\Resources\Consumers\ConsumerResource;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Widgets\Concerns\ResolvesPanelResourceAccess;
 use App\Models\OrderItem;
+use App\Support\SystemSettings;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Number;
 
 class ShopKpisStats extends BaseWidget
 {
@@ -73,6 +75,7 @@ class ShopKpisStats extends BaseWidget
         $revenuePerCustomer = $totalCustomers > 0
             ? round($totalRevenue / $totalCustomers, 2)
             : 0.0;
+        $currency = SystemSettings::currencyForCurrentUser();
 
         $months = collect(range(6, 0))->map(fn (int $ago) => now()->subMonths($ago)->startOfMonth());
         $monthStart = $months->first();
@@ -143,8 +146,8 @@ class ShopKpisStats extends BaseWidget
                 ->descriptionIcon('heroicon-o-x-circle')
                 ->chart($cancellationChart)
                 ->color($cancellationRate > 10 ? 'danger' : 'warning'),
-            Stat::make('Revenue / Customer', '$'.number_format($revenuePerCustomer, 2))
-                ->description('$'.number_format($totalRevenue, 2).' total revenue')
+            Stat::make('Revenue / Customer', Number::currency($revenuePerCustomer, $currency))
+                ->description(Number::currency($totalRevenue, $currency).' total revenue')
                 ->descriptionIcon('heroicon-o-currency-dollar')
                 ->chart($revenueChart)
                 ->color('success'),

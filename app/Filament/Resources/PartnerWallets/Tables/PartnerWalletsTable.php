@@ -6,6 +6,7 @@ use App\Filament\Resources\CommissionPayouts\CommissionPayoutResource;
 use App\Models\PartnerWallet;
 use App\Services\CommissionPayoutService;
 use App\Services\PartnerWalletService;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -29,19 +30,19 @@ class PartnerWalletsTable
                     ->badge(),
                 TextColumn::make('total_earned')
                     ->label('Total Earned')
-                    ->money('USD')
+                    ->money(fn (): string => SystemSettings::currencyForCurrentUser())
                     ->sortable(),
                 TextColumn::make('total_paid')
                     ->label('Total Paid')
-                    ->money('USD')
+                    ->money(fn (): string => SystemSettings::currencyForCurrentUser())
                     ->sortable(),
                 TextColumn::make('pending_balance')
                     ->label('Pending Balance')
-                    ->money('USD')
+                    ->money(fn (): string => SystemSettings::currencyForCurrentUser())
                     ->sortable(),
                 TextColumn::make('available_balance')
                     ->label('Available Balance')
-                    ->money('USD')
+                    ->money(fn (): string => SystemSettings::currencyForCurrentUser())
                     ->sortable(),
                 TextColumn::make('last_synced_at')
                     ->label('Last Updated')
@@ -71,8 +72,10 @@ class PartnerWalletsTable
                                 ->minValue(0.01)
                                 ->default(fn (PartnerWallet $record): float => round((float) $record->available_balance, 2))
                                 ->maxValue(fn (PartnerWallet $record): float => round((float) $record->available_balance, 2))
-                                ->suffix('USD')
-                                ->helperText(fn (PartnerWallet $record): string => 'Maximum requestable amount: $'.number_format((float) $record->available_balance, 2)),
+                                ->suffix(fn (): string => SystemSettings::currencyForCurrentUser())
+                                ->helperText(fn (PartnerWallet $record): string => 'Maximum requestable amount: '
+                                    .SystemSettings::currencyForCurrentUser().' '
+                                    .number_format((float) $record->available_balance, 2)),
                             \Filament\Forms\Components\Select::make('payment_method')
                                 ->options([
                                     'bank_transfer' => 'Bank Transfer',
@@ -101,7 +104,8 @@ class PartnerWalletsTable
 
                                 if ($requestedAmount > $maxAvailable) {
                                     throw ValidationException::withMessages([
-                                        'amount' => 'Requested payout amount cannot be more than available balance ($'.number_format($maxAvailable, 2).').',
+                                        'amount' => 'Requested payout amount cannot be more than available balance ('
+                                            .SystemSettings::currencyForCurrentUser().' '.number_format($maxAvailable, 2).').',
                                     ]);
                                 }
 
@@ -112,7 +116,7 @@ class PartnerWalletsTable
                                     'reference' => (string) ($data['reference'] ?? ''),
                                     'notes' => (string) ($data['notes'] ?? ''),
                                     'status' => 'processing',
-                                    'currency' => 'USD',
+                                    'currency' => SystemSettings::currencyForCurrentUser(),
                                 ], $actor);
 
                                 Notification::make()

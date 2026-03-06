@@ -2,6 +2,8 @@
 
 namespace App\Filament\Pages;
 
+use App\Services\OrganizationCurrencyService;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -22,12 +24,17 @@ class Settings extends Page
 
     public function saveSettings(): void
     {
+        $currencyCodes = implode(',', array_keys(SystemSettings::currencyOptions()));
+
         $validated = validator(
             ['system' => $this->system],
             [
-                'system.currency' => ['required', 'string', 'max:10'],
+                'system.currency' => ['required', 'string', 'in:'.$currencyCodes],
                 'system.payment_terms_days' => ['required', 'integer', 'min:1', 'max:365'],
                 'system.default_tax_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+                'system.default_discount_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+                'system.late_fee_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+                'system.tax_calculation_method' => ['required', 'in:exclusive,inclusive'],
                 'system.low_stock_threshold' => ['required', 'numeric', 'min:0'],
                 'system.allow_partial_payments' => ['required', 'boolean'],
                 'system.auto_approve_invoices' => ['required', 'boolean'],
@@ -42,11 +49,27 @@ class Settings extends Page
         }
 
         $settings = (array) ($organization->settings ?? []);
+        $previousSystem = array_replace(SystemSettings::defaults(), (array) ($settings['system'] ?? []));
+        $previousCurrency = strtoupper((string) ($previousSystem['currency'] ?? SystemSettings::BASE_CURRENCY));
+        $nextCurrency = strtoupper((string) ($validated['system']['currency'] ?? SystemSettings::BASE_CURRENCY));
+
+        if ($previousCurrency !== $nextCurrency) {
+            app(OrganizationCurrencyService::class)->convertOrganizationMonetaryData(
+                $organization,
+                $previousCurrency,
+                $nextCurrency,
+            );
+        }
+
         $settings['system'] = $validated['system'];
 
         $organization->forceFill(['settings' => $settings])->saveQuietly();
 
-        Notification::make()->success()->title('System settings saved')->send();
+        Notification::make()
+            ->success()
+            ->title('System settings saved')
+            ->body('Currency and module defaults were applied successfully.')
+            ->send();
     }
 
     public static function getNavigationGroup(): ?string
@@ -66,18 +89,7 @@ class Settings extends Page
 
     private function loadSettings(): void
     {
-        $defaults = [
-            'currency' => 'USD',
-            'payment_terms_days' => 15,
-            'default_tax_percent' => 10,
-            'low_stock_threshold' => 5,
-            'allow_partial_payments' => true,
-            'auto_approve_invoices' => false,
-        ];
-
         $organization = auth()->user()?->organization;
-        $settings = (array) ($organization?->settings ?? []);
-
-        $this->system = array_replace($defaults, (array) ($settings['system'] ?? []));
+        $this->system = SystemSettings::forOrganization($organization);
     }
 }

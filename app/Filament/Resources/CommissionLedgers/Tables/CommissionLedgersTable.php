@@ -4,6 +4,7 @@ namespace App\Filament\Resources\CommissionLedgers\Tables;
 
 use App\Models\CommissionLedger;
 use App\Support\UserRole;
+use App\Support\SystemSettings;
 use App\Services\PartnerWalletService;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -27,8 +28,8 @@ class CommissionLedgersTable
                 TextColumn::make('to_role')->badge(),
                 TextColumn::make('commission_type'),
                 TextColumn::make('commission_rate'),
-                TextColumn::make('basis_amount')->money('USD'),
-                TextColumn::make('commission_amount')->money('USD'),
+                TextColumn::make('basis_amount')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
+                TextColumn::make('commission_amount')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                 TextColumn::make('status')->badge(),
             ])
             ->filters([

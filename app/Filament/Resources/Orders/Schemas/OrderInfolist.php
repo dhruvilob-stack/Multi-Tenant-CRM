@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Orders\Schemas;
 
+use App\Support\SystemSettings;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -23,7 +24,7 @@ class OrderInfolist
                         TextEntry::make('payment_method')->badge(),
                         TextEntry::make('payment_reference_number')->label('Payment Ref')->placeholder('-'),
                         TextEntry::make('payment_status')->badge(),
-                        TextEntry::make('total_amount_billed')->label('Total Billed')->money(fn ($record) => (string) ($record->currency ?? 'EUR')),
+                        TextEntry::make('total_amount_billed')->label('Total Billed')->money(fn ($record) => (string) ($record->currency ?? SystemSettings::currencyForCurrentUser())),
                         TextEntry::make('paid_at')->dateTime(),
                         TextEntry::make('invoice.invoice_number')->label('Invoice'),
                     ])
@@ -48,9 +49,9 @@ class OrderInfolist
                             ->schema([
                                 TextEntry::make('item_name')->label('Item'),
                                 TextEntry::make('qty')->numeric(),
-                                TextEntry::make('unit_price')->money(fn ($record) => (string) ($record->order?->currency ?? 'EUR')),
+                                TextEntry::make('unit_price')->money(fn ($record) => (string) ($record->order?->currency ?? SystemSettings::currencyForCurrentUser())),
                                 TextEntry::make('discount_percent')->label('Discount')->suffix('%'),
-                                TextEntry::make('line_total')->money(fn ($record) => (string) ($record->order?->currency ?? 'EUR')),
+                                TextEntry::make('line_total')->money(fn ($record) => (string) ($record->order?->currency ?? SystemSettings::currencyForCurrentUser())),
                             ])
                             ->columns(5),
                     ]),

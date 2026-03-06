@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Widgets\Concerns\ResolvesPanelResourceAccess;
 use App\Models\Order;
+use App\Support\SystemSettings;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -66,7 +67,7 @@ class FlaggedOrders extends BaseWidget
                 TextColumn::make('status')
                     ->badge(),
                 TextColumn::make('total_amount')
-                    ->money('USD')
+                    ->money(fn (): string => SystemSettings::currencyForCurrentUser())
                     ->sortable(),
                 TextColumn::make('days_old')
                     ->label('Days Old')

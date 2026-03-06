@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Orders\RelationManagers;
 
+use App\Support\SystemSettings;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -37,11 +38,8 @@ class PaymentsRelationManager extends RelationManager
                     ->required(),
 
                 Select::make('currency')
-                    ->options([
-                        'USD' => 'USD',
-                        'INR' => 'INR',
-                        'EUR' => 'EUR',
-                    ])
+                    ->options(SystemSettings::currencyOptions())
+                    ->default(fn (): string => SystemSettings::currencyForCurrentUser())
                     ->searchable()
                     ->required(),
 
@@ -78,7 +76,7 @@ class PaymentsRelationManager extends RelationManager
 
                         TextColumn::make('amount')
                             ->sortable()
-                            ->money(fn ($record) => (string) ($record->currency ?? 'USD')),
+                            ->money(fn ($record) => (string) ($record->currency ?? SystemSettings::currencyForCurrentUser())),
                     ]),
 
                 ColumnGroup::make('Context')

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Quotations\Tables;
 use App\Models\Quotation;
 use App\Services\QuotationWorkflowService;
 use App\Support\QuotationStatus;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -51,7 +52,7 @@ class QuotationsTable
                     ->color('gray'),
                 TextColumn::make('grand_total')
                     ->label('Grand Total')
-                    ->money('USD')
+                    ->money(fn (): string => SystemSettings::currencyForCurrentUser())
                     ->sortable(),
                 TextColumn::make('valid_until')
                     ->label('Valid Until')
@@ -107,7 +108,7 @@ class QuotationsTable
                                 ->minValue(1)
                                 ->placeholder('Example: 25'),
                             TextInput::make('requested_unit_price')
-                                ->label('Requested Price Per Unit (USD)')
+                                ->label(fn (): string => 'Requested Price Per Unit ('.SystemSettings::currencyForCurrentUser().')')
                                 ->numeric()
                                 ->minValue(0)
                                 ->placeholder('Example: 42'),

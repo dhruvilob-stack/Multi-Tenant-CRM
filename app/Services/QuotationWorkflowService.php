@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Quotation;
 use App\Models\QuotationItem;
 use App\Support\QuotationStatus;
+use App\Support\SystemSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -51,7 +52,11 @@ class QuotationWorkflowService
         return DB::transaction(function () use ($quotation, $paymentTermsDays): Invoice {
             $quotation->update(['status' => QuotationStatus::CONFIRMED]);
 
-            $invoice = $this->createInvoiceFromQuotation($quotation, $paymentTermsDays);
+            $resolvedTerms = $paymentTermsDays > 0
+                ? $paymentTermsDays
+                : (int) (SystemSettings::forOrganization($quotation->vendor?->organization)['payment_terms_days'] ?? 15);
+
+            $invoice = $this->createInvoiceFromQuotation($quotation, $resolvedTerms);
 
             $quotation->update(['status' => QuotationStatus::CONVERTED]);
 
@@ -73,6 +78,7 @@ class QuotationWorkflowService
 
         return DB::transaction(function () use ($quotation): Order {
             $quotation->update(['status' => QuotationStatus::CONFIRMED]);
+            $currency = SystemSettings::currencyForOrganization($quotation->vendor?->organization);
 
             $order = Order::query()->create([
                 'order_number' => $this->nextOrderNumber(),
@@ -80,7 +86,7 @@ class QuotationWorkflowService
                 'consumer_id' => $quotation->distributor_id,
                 'vendor_id' => $quotation->vendor_id,
                 'status' => 'new',
-                'currency' => 'USD',
+                'currency' => $currency,
                 'payment_method' => 'bank_transfer',
                 'payment_status' => 'pending',
                 'total_amount' => $quotation->grand_total,
@@ -107,6 +113,8 @@ class QuotationWorkflowService
 
     private function createInvoiceFromQuotation(Quotation $quotation, int $paymentTermsDays): Invoice
     {
+        $currency = SystemSettings::currencyForOrganization($quotation->vendor?->organization);
+
         $invoice = Invoice::query()->create([
             'invoice_number' => $this->nextInvoiceNumber(),
             'quotation_id' => $quotation->id,
@@ -121,7 +129,7 @@ class QuotationWorkflowService
             'overall_discount_value' => $quotation->discount_amount,
             'grand_total' => $quotation->grand_total,
             'balance' => $quotation->grand_total,
-            'currency' => 'USD',
+            'currency' => $currency,
         ]);
 
         $quotation->items()->each(function (QuotationItem $item) use ($invoice): void {

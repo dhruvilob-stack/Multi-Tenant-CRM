@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Invoices\Schemas;
 
 use App\Models\User;
+use App\Support\SystemSettings;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
@@ -106,12 +107,8 @@ class InvoiceForm
                                 'in' => 'India',
                             ]),
                         Select::make('currency')
-                            ->options([
-                                'USD' => 'USA Dollars ($)',
-                                'INR' => 'Indian Rupee (INR)',
-                                'EUR' => 'Euro (EUR)',
-                            ])
-                            ->default('USD')
+                            ->options(SystemSettings::currencyOptions())
+                            ->default(fn (): string => SystemSettings::currencyForCurrentUser())
                             ->required(),
                         Select::make('payment_method')
                             ->options([

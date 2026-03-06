@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Quotations\Schemas;
 
 use App\Models\User;
 use App\Support\QuotationStatus;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
@@ -18,6 +19,9 @@ class QuotationForm
     public static function configure(Schema $schema): Schema
     {
         $user = auth()->user();
+        $system = SystemSettings::forOrganization($user?->organization);
+        $defaultTaxPercent = (float) ($system['default_tax_percent'] ?? 0);
+        $defaultDiscountPercent = (float) ($system['default_discount_percent'] ?? 0);
 
         return $schema
             ->components([
@@ -96,8 +100,8 @@ class QuotationForm
                 Section::make('Amounts')
                     ->schema([
                         TextInput::make('subtotal')->numeric()->default(0),
-                        TextInput::make('discount_amount')->numeric()->default(0),
-                        TextInput::make('tax_amount')->numeric()->default(0),
+                        TextInput::make('discount_amount')->numeric()->default($defaultDiscountPercent),
+                        TextInput::make('tax_amount')->numeric()->default($defaultTaxPercent),
                         TextInput::make('grand_total')->numeric()->default(0),
                     ])
                     ->columns(4),
@@ -107,9 +111,9 @@ class QuotationForm
                         TextInput::make('item_name')->required(),
                         TextInput::make('qty')->numeric()->required()->default(1),
                         TextInput::make('selling_price')->numeric()->required()->default(0),
-                        TextInput::make('discount_percent')->numeric()->default(0),
+                        TextInput::make('discount_percent')->numeric()->default($defaultDiscountPercent),
                         TextInput::make('net_price')->numeric()->default(0),
-                        TextInput::make('tax_rate')->numeric()->default(0),
+                        TextInput::make('tax_rate')->numeric()->default($defaultTaxPercent),
                         TextInput::make('tax_amount')->numeric()->default(0),
                         TextInput::make('total')->numeric()->default(0),
                     ])

@@ -122,6 +122,13 @@
         ?: data_get($invoice->shipping_address, 'mobile')
         ?: data_get($invoice->shipping_address, 'phone')
         ?: '-';
+    $currency = strtoupper((string) (
+        $invoice->currency
+        ?: $invoice->order?->currency
+        ?: \App\Support\SystemSettings::currencyForOrganization(
+            $invoice->quotation?->vendor?->organization ?: $invoice->order?->vendor?->organization
+        )
+    ));
 @endphp
 
 <div class="sheet">
@@ -178,8 +185,8 @@
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $item->item_name }}</td>
                         <td class="num">{{ number_format((float) $item->qty, 3) }}</td>
-                        <td class="num">${{ number_format((float) $item->selling_price, 2) }}</td>
-                        <td class="num">${{ number_format((float) $item->total, 2) }}</td>
+                        <td class="num">{{ \Illuminate\Support\Number::currency((float) $item->selling_price, $currency) }}</td>
+                        <td class="num">{{ \Illuminate\Support\Number::currency((float) $item->total, $currency) }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -229,15 +236,15 @@
         </tr>
         <tr>
             <th>Pre-tax Total</th>
-            <td>${{ number_format((float) $invoice->pre_tax_total, 2) }}</td>
+            <td>{{ \Illuminate\Support\Number::currency((float) $invoice->pre_tax_total, $currency) }}</td>
         </tr>
         <tr>
             <th>Tax</th>
-            <td>${{ number_format((float) $invoice->tax_amount, 2) }}</td>
+            <td>{{ \Illuminate\Support\Number::currency((float) $invoice->tax_amount, $currency) }}</td>
         </tr>
         <tr class="grand">
             <th>Grand Total</th>
-            <td>${{ number_format((float) $invoice->grand_total, 2) }}</td>
+            <td>{{ \Illuminate\Support\Number::currency((float) $invoice->grand_total, $currency) }}</td>
         </tr>
     </table>
 

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CommissionPayouts\Tables;
 use App\Models\CommissionLedger;
 use App\Models\CommissionPayout;
 use App\Services\CommissionPayoutService;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -46,7 +47,7 @@ class CommissionPayoutsTable
 
                         return round(max($earned - $paid, 0), 2);
                     })
-                    ->money('USD'),
+                    ->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                 TextColumn::make('wallet_paid')
                     ->label('Wallet Paid')
                     ->state(function (CommissionPayout $record): float {
@@ -58,7 +59,7 @@ class CommissionPayoutsTable
                             )
                             ->sum('amount'), 2);
                     })
-                    ->money('USD'),
+                    ->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                 TextColumn::make('amount')->money(fn (CommissionPayout $record): string => (string) ($record->currency ?: 'USD')),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('payment_method')->badge(),

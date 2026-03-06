@@ -3,11 +3,13 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Invoice;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Number;
 
 class PanelResourcesOverview extends StatsOverviewWidget
 {
@@ -31,8 +33,9 @@ class PanelResourcesOverview extends StatsOverviewWidget
         $stats = [];
         $revenue = $this->resolveRevenueTotal();
         $paid = $this->resolvePaidRevenueTotal();
-        $stats[] = Stat::make('Revenue (All Invoices)', '$'.number_format($revenue, 2))
-            ->description('Collected: $'.number_format($paid, 2))
+        $currency = SystemSettings::currencyForCurrentUser();
+        $stats[] = Stat::make('Revenue (All Invoices)', Number::currency($revenue, $currency))
+            ->description('Collected: '.Number::currency($paid, $currency))
             ->color('success')
             ->icon('heroicon-o-banknotes');
 

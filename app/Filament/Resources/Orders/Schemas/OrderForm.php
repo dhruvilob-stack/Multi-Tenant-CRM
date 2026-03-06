@@ -7,6 +7,7 @@ use App\Filament\Resources\Shop\Products\ProductResource as ShopProductResource;
 use App\Forms\Components\AddressForm;
 use App\Models\Product;
 use App\Models\Order;
+use App\Support\SystemSettings;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
@@ -28,12 +29,18 @@ class OrderForm
 {
     private static function calculateLineTotal(float $qty, float $unitPrice, float $discountPercent): float
     {
+        $system = SystemSettings::forOrganization(auth()->user()?->organization);
         $safeQty = max($qty, 0);
         $safeUnitPrice = max($unitPrice, 0);
         $safeDiscount = max(0, min(100, $discountPercent));
-        $netUnitPrice = $safeUnitPrice * (1 - ($safeDiscount / 100));
+        $defaultTaxPercent = max(0.0, (float) ($system['default_tax_percent'] ?? 0));
+        $taxMethod = (string) ($system['tax_calculation_method'] ?? 'exclusive');
+        $netTotal = $safeQty * ($safeUnitPrice * (1 - ($safeDiscount / 100)));
+        $finalTotal = $taxMethod === 'exclusive'
+            ? ($netTotal * (1 + ($defaultTaxPercent / 100)))
+            : $netTotal;
 
-        return round($safeQty * $netUnitPrice, 2);
+        return round($finalTotal, 2);
     }
 
     private static function recalculateLineTotal(callable $set, callable $get): void
@@ -184,12 +191,8 @@ class OrderForm
                 ->default(OrderStatus::New->value)
                 ->required(),
             Select::make('currency')
-                ->options([
-                    'EUR' => 'Euro',
-                    'USD' => 'US Dollar',
-                    'INR' => 'Indian Rupee',
-                ])
-                ->default('EUR')
+                ->options(SystemSettings::currencyOptions())
+                ->default(fn (): string => SystemSettings::currencyForCurrentUser())
                 ->required(),
             Textarea::make('notes')->columnSpanFull(),
             AddressForm::make('billing_address', 'Billing Address')->columnSpanFull(),
@@ -237,7 +240,7 @@ class OrderForm
                     $paymentMethod = (string) ($get('payment_method') ?: '-');
                     $paymentRef = (string) ($get('payment_reference_number') ?: '-');
                     $paymentStatus = (string) ($get('payment_status') ?: '-');
-                    $currency = (string) ($get('currency') ?: 'EUR');
+                    $currency = (string) ($get('currency') ?: SystemSettings::currencyForCurrentUser());
                     $items = is_array($get('items')) ? $get('items') : [];
                     $productNames = Product::query()
                         ->whereIn('id', collect($items)->pluck('product_id')->filter()->all())

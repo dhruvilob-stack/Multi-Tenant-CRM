@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Inventories\Schemas;
 
+use App\Support\SystemSettings;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -36,10 +37,10 @@ class InventoryInfolist
 
                 Section::make('Pricing')
                     ->schema([
-                        TextEntry::make('unit_price')->label('Inventory Price')->money('USD'),
+                        TextEntry::make('unit_price')->label('Inventory Price')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                         TextEntry::make('discount_percent')->label('Discount')->suffix('%'),
-                        TextEntry::make('product.price')->label('Product Selling Price')->money('USD'),
-                        TextEntry::make('product.old_price')->label('Compare At Price')->money('USD'),
+                        TextEntry::make('product.price')->label('Product Selling Price')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
+                        TextEntry::make('product.old_price')->label('Compare At Price')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                         IconEntry::make('product.is_visible')
                             ->label('Product Visible')
                             ->boolean(),

@@ -6,6 +6,7 @@ use App\Filament\Resources\Products\ProductResource;
 use App\Models\Product;
 use App\Models\ProductChangeRequest;
 use App\Filament\Support\ResourceDataExchange;
+use App\Support\SystemSettings;
 use App\Support\UserRole;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteBulkAction;
@@ -27,7 +28,7 @@ class ProductsTable
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('manufacturer.name')->label('Manufacturer'),
                 TextColumn::make('category.name')->label('Category'),
-                TextColumn::make('base_price')->money('USD')->sortable(),
+                TextColumn::make('base_price')->money(fn (): string => SystemSettings::currencyForCurrentUser())->sortable(),
                 TextColumn::make('qty')->label('Stock Qty')->sortable(),
                 TextColumn::make('purchased_qty')->label('Purchased Qty')->numeric(decimalPlaces: 3)->sortable(),
                 TextColumn::make('status')->badge(),

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Shop\Products\Schemas;
 
+use App\Support\SystemSettings;
 use Filament\Infolists\Components\IconEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
@@ -33,9 +34,9 @@ class ProductInfolist
 
                 Section::make('Pricing & Inventory')
                     ->schema([
-                        TextEntry::make('price')->money('USD'),
-                        TextEntry::make('old_price')->label('Compare at price')->money('USD'),
-                        TextEntry::make('cost')->money('USD'),
+                        TextEntry::make('price')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
+                        TextEntry::make('old_price')->label('Compare at price')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
+                        TextEntry::make('cost')->money(fn (): string => SystemSettings::currencyForCurrentUser()),
                         TextEntry::make('qty')->label('Quantity'),
                         TextEntry::make('security_stock'),
                     ])
