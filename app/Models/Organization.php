@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Organization extends BaseModel
 {
+    protected $connection = 'landlord';
+
     protected $fillable = [
         'tenant_id',
         'name',

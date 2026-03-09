@@ -15,15 +15,16 @@ use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Throwable;
 
 class AuditNotificationService
 {
     public function log(Model $model, string $event, array $before = [], array $after = []): AuditLog
     {
         $modelKey = (string) $model->getKey();
+        $auditableKeyColumn = $this->resolvePolymorphicKeyColumn('audit_logs', 'auditable');
         $payload = [
             'auditable_type' => $model::class,
-            'auditable_id' => $modelKey,
             'event' => $event,
             'performed_by' => Auth::id() ? (string) Auth::user()->email : 'system',
             'performed_role' => Auth::user()?->role,
@@ -32,7 +33,11 @@ class AuditNotificationService
             'ip_address' => Request::ip(),
         ];
 
-        if (! $this->canPersistPolymorphicKey('audit_logs', 'auditable_id', $modelKey)) {
+        if ($auditableKeyColumn) {
+            $payload[$auditableKeyColumn] = $modelKey;
+        }
+
+        if (! $auditableKeyColumn || ! $this->canPersistPolymorphicKey('audit_logs', $auditableKeyColumn, $modelKey)) {
             return new AuditLog($payload);
         }
 
@@ -62,9 +67,10 @@ class AuditNotificationService
         $targetList = $this->normalizeRecipients(
             is_callable($recipients) ? $recipients($model) : $recipients
         );
+        $notificationKeyColumn = $this->resolvePolymorphicKeyColumn('resource_notifications', 'notificationable');
         $canPersistResourceNotification = $this->canPersistPolymorphicKey(
             'resource_notifications',
-            'notificationable_id',
+            (string) $notificationKeyColumn,
             $modelKey
         );
 
@@ -79,17 +85,19 @@ class AuditNotificationService
 
             $notification = null;
 
-            if ($canPersistResourceNotification) {
+            if ($canPersistResourceNotification && $notificationKeyColumn) {
                 try {
-                    $notification = ResourceNotification::query()->create([
+                    $notificationPayload = [
                         'notificationable_type' => $model::class,
-                        'notificationable_id' => $modelKey,
                         'recipient_id' => $recipient->id,
                         'recipient_role' => $recipient->role,
                         'action' => $action,
                         'message' => $message,
                         'redirect_url' => $resolvedRedirectUrl,
-                    ]);
+                    ];
+                    $notificationPayload[$notificationKeyColumn] = $modelKey;
+
+                    $notification = ResourceNotification::query()->create($notificationPayload);
 
                     $rows[] = $notification;
                 } catch (QueryException) {
@@ -157,12 +165,44 @@ class AuditNotificationService
 
     protected function canPersistPolymorphicKey(string $table, string $column, string $key): bool
     {
-        if (is_numeric($key)) {
-            return true;
+        try {
+            if ($column === '' || ! Schema::hasTable($table) || ! Schema::hasColumn($table, $column)) {
+                return false;
+            }
+
+            if (is_numeric($key)) {
+                return true;
+            }
+
+            $type = Schema::getColumnType($table, $column);
+
+            return in_array($type, ['string', 'varchar', 'text', 'char'], true);
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    protected function resolvePolymorphicKeyColumn(string $table, string $prefix): ?string
+    {
+        try {
+            if (! Schema::hasTable($table)) {
+                return null;
+            }
+
+            $candidates = [
+                "{$prefix}_id",
+                "{$prefix}_uuid",
+            ];
+
+            foreach ($candidates as $candidate) {
+                if (Schema::hasColumn($table, $candidate)) {
+                    return $candidate;
+                }
+            }
+        } catch (Throwable) {
+            return null;
         }
 
-        $type = Schema::getColumnType($table, $column);
-
-        return in_array($type, ['string', 'varchar', 'text', 'char'], true);
+        return null;
     }
 }

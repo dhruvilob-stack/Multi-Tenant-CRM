@@ -2,7 +2,7 @@
     <x-filament::modal
         :id="$this->getModalId()"
         heading="Customize Tabs"
-        description="Use up/down arrows to reorder. Tabs move only within their group."
+        description="Drag and drop to reorder. Tabs move only within their group."
         width="4xl"
         teleport="body"
     >

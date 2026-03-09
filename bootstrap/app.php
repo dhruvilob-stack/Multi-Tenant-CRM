@@ -4,7 +4,11 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\ApplyUserLocale;
+use App\Http\Middleware\InitializeTenancy;
 use App\Http\Middleware\RedirectPanelLoginToUniversalLogin;
+use App\Http\Middleware\SetFilamentPanelFromReferer;
+use App\Http\Middleware\SetPanelSessionCookie;
+use App\Http\Middleware\SetTenantUrlDefaults;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,7 +18,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(prepend: [
+            SetPanelSessionCookie::class,
+        ]);
+
         $middleware->web(append: [
+            SetFilamentPanelFromReferer::class,
+            InitializeTenancy::class,
+            SetTenantUrlDefaults::class,
             RedirectPanelLoginToUniversalLogin::class,
             ApplyUserLocale::class,
         ]);

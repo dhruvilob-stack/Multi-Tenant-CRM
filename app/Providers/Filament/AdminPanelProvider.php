@@ -3,12 +3,15 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\ApplyUserLocale;
+use App\Http\Middleware\InitializeTenancy;
+use App\Http\Middleware\SetTenantUrlDefaults;
+use App\Http\Middleware\RedirectPanelLoginToUniversalLogin;
+use App\Http\Middleware\SetPanelSessionCookie;
 use App\Support\CrmGlobalSearchProvider;
 use App\Support\NavigationPreferenceManager;
 use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
 use CharrafiMed\GlobalSearchModal\GlobalSearchResults as ModalGlobalSearchResults;
 use Filament\Http\Middleware\Authenticate;
-use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationBuilder;
@@ -29,9 +32,8 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->default()
             ->id('admin')
-            ->path('admin')
+            ->path('{tenant}')
             ->login()
             ->spa(true, true)
             ->sidebarCollapsibleOnDesktop()
@@ -80,8 +82,11 @@ class AdminPanelProvider extends PanelProvider
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
+                SetPanelSessionCookie::class,
                 StartSession::class,
-                AuthenticateSession::class,
+                InitializeTenancy::class,
+                SetTenantUrlDefaults::class,
+                RedirectPanelLoginToUniversalLogin::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,
@@ -91,6 +96,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
                 ApplyUserLocale::class,
-            ]);
+            ])
+            ->authGuard('tenant');
     }
 }

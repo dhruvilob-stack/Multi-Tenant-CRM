@@ -13,6 +13,7 @@ use App\Observers\InvoiceItemObserver;
 use App\Observers\InvoiceObserver;
 use App\Observers\OrderObserver;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,7 +24,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            \Filament\Auth\Http\Responses\Contracts\LoginResponse::class,
+            \App\Support\FilamentLoginResponse::class
+        );
     }
 
     /**
@@ -31,6 +35,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Route::pattern(
+            'tenant',
+            '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|up$|filament$|livewire.*$)[A-Za-z0-9][A-Za-z0-9\-]*$'
+        );
+
         Invoice::observe(InvoiceObserver::class);
         InvoiceItem::observe(InvoiceItemObserver::class);
         Order::observe(OrderObserver::class);

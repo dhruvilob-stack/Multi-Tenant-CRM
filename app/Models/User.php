@@ -157,6 +157,10 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             return $this->isRole(UserRole::SUPER_ADMIN);
         }
 
+        if ($panel->getId() === 'admin') {
+            return true;
+        }
+
         return true;
     }
 

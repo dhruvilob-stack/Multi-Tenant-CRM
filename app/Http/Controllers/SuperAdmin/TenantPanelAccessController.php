@@ -4,7 +4,6 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
-use App\Models\User;
 use App\Support\UserRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -19,21 +18,14 @@ class TenantPanelAccessController extends Controller
             abort(403);
         }
 
-        $orgAdmin = User::withoutGlobalScopes()
-            ->where('organization_id', $organization->id)
-            ->where('role', UserRole::ORG_ADMIN)
-            ->where('status', 'active')
-            ->orderByDesc('id')
-            ->first();
+        $tenant = $organization->tenant;
 
-        if (! $orgAdmin) {
-            return back()->with('error', 'No active organization admin found for this tenant.');
+        if (! $tenant) {
+            return back()->with('error', 'No tenant mapping found for this organization.');
         }
 
-        Auth::login($orgAdmin);
-        request()->session()->regenerate();
+        $slug = $tenant->slug ?: $tenant->id;
 
-        return redirect('/admin');
+        return redirect("/{$slug}/login");
     }
 }
-

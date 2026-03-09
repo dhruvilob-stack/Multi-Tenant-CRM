@@ -328,48 +328,41 @@
     }
 
     .fi-main-sidebar .fi-sidebar-nav {
-        scrollbar-width: none;
-        scrollbar-color: transparent transparent;
-        /* padding-inline-end: 0.35rem; */
         scroll-behavior: smooth;
+        scrollbar-gutter: stable;
     }
 
-    .fi-main-sidebar .fi-sidebar-nav::-webkit-scrollbar {
+    /* Keep collapsed sidebar visually stable: no hover scrollbar width changes. */
+    .fi-main-sidebar:not(.fi-sidebar-open) .fi-sidebar-nav {
+        overflow-y: hidden;
+        scrollbar-width: none;
+    }
+
+    .fi-main-sidebar:not(.fi-sidebar-open) .fi-sidebar-nav::-webkit-scrollbar {
         width: 0;
+        height: 0;
     }
 
-    .fi-main-sidebar .fi-sidebar-nav::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .fi-main-sidebar .fi-sidebar-nav::-webkit-scrollbar-thumb {
-        background: transparent;
-        border-radius: 9999px;
-        border: 1px solid transparent;
-        background-clip: padding-box;
-    }
-
-    .fi-main-sidebar .fi-sidebar-nav:hover::-webkit-scrollbar-thumb {
-        background: color-mix(in oklab, var(--primary-600) 55%, #64748b);
-    }
-
-    .fi-main-sidebar:hover .fi-sidebar-nav,
-    .fi-main-sidebar .fi-sidebar-nav:hover,
-    .fi-main-sidebar .fi-sidebar-nav:focus-within {
+    /* Show scrollbar only after explicit open (>) and only when content overflows. */
+    .fi-main-sidebar.fi-sidebar-open .fi-sidebar-nav {
+        overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: color-mix(in oklab, var(--primary-500) 42%, #94a3b8) transparent;
     }
 
-    .fi-main-sidebar:hover .fi-sidebar-nav::-webkit-scrollbar,
-    .fi-main-sidebar .fi-sidebar-nav:hover::-webkit-scrollbar,
-    .fi-main-sidebar .fi-sidebar-nav:focus-within::-webkit-scrollbar {
+    .fi-main-sidebar.fi-sidebar-open .fi-sidebar-nav::-webkit-scrollbar {
         width: 6px;
     }
 
-    .fi-main-sidebar:hover .fi-sidebar-nav::-webkit-scrollbar-thumb,
-    .fi-main-sidebar .fi-sidebar-nav:hover::-webkit-scrollbar-thumb,
-    .fi-main-sidebar .fi-sidebar-nav:focus-within::-webkit-scrollbar-thumb {
+    .fi-main-sidebar.fi-sidebar-open .fi-sidebar-nav::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .fi-main-sidebar.fi-sidebar-open .fi-sidebar-nav::-webkit-scrollbar-thumb {
         background: color-mix(in oklab, var(--primary-500) 45%, #94a3b8);
+        border-radius: 9999px;
+        border: 1px solid transparent;
+        background-clip: padding-box;
     }
 
     .fi-main-sidebar .fi-sidebar-group > .fi-sidebar-group-btn {
@@ -404,23 +397,11 @@
         color: color-mix(in oklab, var(--primary-600) 88%, #0f172a);
     }
 
-    .dark .fi-main-sidebar .fi-sidebar-nav {
-        scrollbar-color: transparent transparent;
-    }
-
-    .dark .fi-main-sidebar .fi-sidebar-nav::-webkit-scrollbar-thumb {
-        background: transparent;
-    }
-
-    .dark .fi-main-sidebar:hover .fi-sidebar-nav,
-    .dark .fi-main-sidebar .fi-sidebar-nav:hover,
-    .dark .fi-main-sidebar .fi-sidebar-nav:focus-within {
+    .dark .fi-main-sidebar.fi-sidebar-open .fi-sidebar-nav {
         scrollbar-color: color-mix(in oklab, var(--primary-400) 48%, #475569) transparent;
     }
 
-    .dark .fi-main-sidebar:hover .fi-sidebar-nav::-webkit-scrollbar-thumb,
-    .dark .fi-main-sidebar .fi-sidebar-nav:hover::-webkit-scrollbar-thumb,
-    .dark .fi-main-sidebar .fi-sidebar-nav:focus-within::-webkit-scrollbar-thumb {
+    .dark .fi-main-sidebar.fi-sidebar-open .fi-sidebar-nav::-webkit-scrollbar-thumb {
         background: color-mix(in oklab, var(--primary-400) 52%, #334155);
     }
 

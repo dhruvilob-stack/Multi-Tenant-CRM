@@ -36,7 +36,7 @@ class NavigationTabsCustomizer extends Component implements HasActions, HasForms
         return $schema
             ->components([
                 Repeater::make('groups')
-                    ->label('Use arrows to reorder groups and tabs')
+                    ->label('Drag and drop to reorder groups and tabs')
                     ->schema([
                         Hidden::make('group_key'),
                         TextInput::make('group_label')
@@ -56,14 +56,12 @@ class NavigationTabsCustomizer extends Component implements HasActions, HasForms
                                     ->dehydrated(false),
                             ])
                             ->columns(1)
-                            ->reorderable()
-                            ->reorderableWithButtons()
+                            ->reorderableWithDragAndDrop()
                             ->addable(false)
                             ->deletable(false),
                     ])
                     ->columns(1)
-                    ->reorderable()
-                    ->reorderableWithButtons()
+                    ->reorderableWithDragAndDrop()
                     ->addable(false)
                     ->deletable(false),
             ])

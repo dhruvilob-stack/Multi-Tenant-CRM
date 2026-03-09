@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tenant extends BaseModel
 {
+    protected $connection = 'landlord';
+
     public $incrementing = false;
 
     protected $keyType = 'string';
@@ -14,13 +16,21 @@ class Tenant extends BaseModel
     protected $fillable = [
         'id',
         'name',
+        'slug',
         'domain',
+        'database',
+        'db_host',
+        'db_port',
+        'db_username',
+        'db_password',
+        'status',
         'data',
     ];
 
     protected function casts(): array
     {
         return [
+            'db_port' => 'integer',
             'data' => 'array',
         ];
     }

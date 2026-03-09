@@ -8,6 +8,8 @@ use App\Support\UserRole;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Throwable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -59,7 +61,7 @@ trait HasAuditNotifications
         }
 
         if ($organizationId = $this->resolveOrganizationId()) {
-            $orgAdmins = User::query()
+            $orgAdmins = $this->landlordUsersQuery()
                 ->where('organization_id', $organizationId)
                 ->whereIn('role', [UserRole::ORG_ADMIN, UserRole::SUPER_ADMIN])
                 ->get();
@@ -67,7 +69,7 @@ trait HasAuditNotifications
             $users = $users->merge($orgAdmins);
         }
 
-        $superAdmins = User::query()
+        $superAdmins = $this->landlordUsersQuery()
             ->where('role', UserRole::SUPER_ADMIN)
             ->get();
 
@@ -89,7 +91,7 @@ trait HasAuditNotifications
     protected function getAuditParent(): ?User
     {
         if (isset($this->parent_id) && $this->parent_id) {
-            return User::query()->find($this->parent_id);
+            return $this->landlordUsersQuery()->find($this->parent_id);
         }
 
         if (method_exists($this, 'parent')) {
@@ -97,6 +99,11 @@ trait HasAuditNotifications
         }
 
         return null;
+    }
+
+    protected function landlordUsersQuery(): Builder
+    {
+        return User::on(config('tenancy.landlord_connection', 'landlord'));
     }
 
     protected function resolveOrganizationId(): ?int
@@ -116,7 +123,11 @@ trait HasAuditNotifications
     {
         [$panelId, $resourceClass] = $this->resolvePanelAndResourceForRecipient($recipient);
         if ($resourceClass !== null) {
-            $indexUrl = $resourceClass::getUrl('index', panel: $panelId);
+            $indexUrl = $this->resolveResourceIndexUrlForRecipient($resourceClass, $panelId, $recipient);
+
+            if ($indexUrl === null) {
+                return $panelId === 'super-admin' ? url('/super-admin') : url('/');
+            }
 
             if ($event === 'deleted') {
                 return $indexUrl;
@@ -142,6 +153,49 @@ trait HasAuditNotifications
         return "{$indexUrl}{$separator}" . http_build_query([
             'highlight_id' => $this->getKey(),
         ]);
+    }
+
+    /**
+     * @param class-string<Resource> $resourceClass
+     */
+    protected function resolveResourceIndexUrlForRecipient(string $resourceClass, string $panelId, User $recipient): ?string
+    {
+        $params = [];
+
+        if ($panelId === 'admin') {
+            $tenant = $this->resolveTenantSlugForRecipient($recipient);
+            if (blank($tenant)) {
+                return null;
+            }
+
+            $params['tenant'] = $tenant;
+        }
+
+        try {
+            return $resourceClass::getUrl('index', $params, panel: $panelId);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    protected function resolveTenantSlugForRecipient(User $recipient): ?string
+    {
+        $routeTenant = request()->route('tenant');
+        if (is_string($routeTenant) && $routeTenant !== '' && ! str_contains($routeTenant, '{')) {
+            return $routeTenant;
+        }
+
+        $organization = $recipient->organization;
+        if (! $organization) {
+            return null;
+        }
+
+        $tenant = $organization->tenant;
+        if (! $tenant) {
+            return null;
+        }
+
+        return (string) ($tenant->slug ?: $tenant->id ?: null);
     }
 
     /**
