@@ -2,11 +2,10 @@
 
 namespace App\Filament\Widgets;
 
-use App\Filament\SuperAdmin\Resources\Organizations\OrganizationResource;
-use App\Filament\SuperAdmin\Resources\Tenants\TenantResource;
 use App\Filament\SuperAdmin\Resources\Users\UserResource;
 use App\Filament\Widgets\Concerns\ResolvesPanelResourceAccess;
 use App\Models\Invoice;
+use App\Models\Tenant;
 use App\Support\SystemSettings;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -21,16 +20,16 @@ class SuperAdminPlatformStats extends BaseWidget
     public static function canView(): bool
     {
         return static::canUseAnyResource([
-            TenantResource::class,
-            OrganizationResource::class,
             UserResource::class,
         ]);
     }
 
     protected function getStats(): array
     {
-        $tenantCount = TenantResource::getEloquentQuery()->count();
-        $orgCount = OrganizationResource::getEloquentQuery()->count();
+        $tenantCount = Tenant::query()->count();
+        $activeTenantCount = Tenant::query()
+            ->where('status', 'active')
+            ->count();
         $userCount = UserResource::getEloquentQuery()->count();
 
         $totalRevenue = (float) Invoice::query()->where('status', '!=', 'cancelled')->sum('grand_total');
@@ -42,9 +41,9 @@ class SuperAdminPlatformStats extends BaseWidget
                 ->description('Total tenants')
                 ->descriptionIcon('heroicon-o-building-office-2')
                 ->color('info'),
-            Stat::make('Organizations', number_format((int) $orgCount))
-                ->description('Total organizations')
-                ->descriptionIcon('heroicon-o-building-library')
+            Stat::make('Active Tenants', number_format((int) $activeTenantCount))
+                ->description('Operational organizations')
+                ->descriptionIcon('heroicon-o-check-badge')
                 ->color('primary'),
             Stat::make('Users', number_format((int) $userCount))
                 ->description('Across all organizations')

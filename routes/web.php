@@ -16,8 +16,27 @@ use App\Http\Controllers\SuperAdmin\TenantPanelAccessController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-Route::redirect('/', '/super-admin/login');
+Route::get('/', function () {
+    return view('home', [
+        'superAdminUrl' => url('/super-admin/login'),
+        'tenantDemoUrl' => url('/blueorbit/login') . '?' . http_build_query([
+            'email' => 'blueorbit@gmail.com',
+            'password' => 'password',
+        ]),
+    ]);
+})->name('landing');
+
+Route::get('/demo-image/{file}', function (string $file): BinaryFileResponse {
+    abort_unless(in_array($file, ['1.png', '2.png', '3.png'], true), 404);
+    $path = base_path($file);
+    abort_unless(file_exists($path), 404);
+
+    return response()->file($path, [
+        'Cache-Control' => 'public, max-age=3600',
+    ]);
+})->name('demo.image');
 
 Route::get('/platform/login', function () {
     return redirect('/super-admin/login');
@@ -67,34 +86,34 @@ Route::prefix('{tenant}')
     ->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+'])
     ->middleware('auth:tenant')
     ->group(function (): void {
-    Route::post('/organizations/{id}/activate', [WorkflowController::class, 'activateOrganization']);
-    Route::post('/organizations/{id}/suspend', [WorkflowController::class, 'suspendOrganization']);
+        Route::post('/organizations/{id}/activate', [WorkflowController::class, 'activateOrganization']);
+        Route::post('/organizations/{id}/suspend', [WorkflowController::class, 'suspendOrganization']);
 
-    Route::post('/manufacturers/{id}/send-invitation', [WorkflowController::class, 'sendManufacturerInvitation']);
-    Route::post('/distributors/{id}/invite-vendor', [WorkflowController::class, 'inviteVendor']);
-    Route::post('/vendors/{id}/invite-consumer', [WorkflowController::class, 'inviteConsumer']);
+        Route::post('/manufacturers/{id}/send-invitation', [WorkflowController::class, 'sendManufacturerInvitation']);
+        Route::post('/distributors/{id}/invite-vendor', [WorkflowController::class, 'inviteVendor']);
+        Route::post('/vendors/{id}/invite-consumer', [WorkflowController::class, 'inviteConsumer']);
 
-    Route::post('/products/{id}/duplicate', [WorkflowController::class, 'duplicateProduct']);
+        Route::post('/products/{id}/duplicate', [WorkflowController::class, 'duplicateProduct']);
 
-    Route::post('/quotations/{id}/send', [WorkflowController::class, 'sendQuotation']);
-    Route::post('/quotations/{id}/negotiate', [WorkflowController::class, 'negotiateQuotation']);
-    Route::post('/quotations/{id}/confirm', [WorkflowController::class, 'confirmQuotation']);
-    Route::post('/quotations/{id}/reject', [WorkflowController::class, 'rejectQuotation']);
-    Route::post('/quotations/{id}/convert-to-invoice', [WorkflowController::class, 'convertQuotationToInvoice']);
+        Route::post('/quotations/{id}/send', [WorkflowController::class, 'sendQuotation']);
+        Route::post('/quotations/{id}/negotiate', [WorkflowController::class, 'negotiateQuotation']);
+        Route::post('/quotations/{id}/confirm', [WorkflowController::class, 'confirmQuotation']);
+        Route::post('/quotations/{id}/reject', [WorkflowController::class, 'rejectQuotation']);
+        Route::post('/quotations/{id}/convert-to-invoice', [WorkflowController::class, 'convertQuotationToInvoice']);
 
-    Route::post('/invoices/{id}/approve', [WorkflowController::class, 'approveInvoice']);
-    Route::post('/invoices/{id}/send', [WorkflowController::class, 'sendInvoice']);
-    Route::post('/invoices/{id}/mark-paid', [WorkflowController::class, 'markInvoicePaid']);
-    Route::post('/invoices/{id}/cancel', [WorkflowController::class, 'cancelInvoice']);
-    Route::post('/invoices/{id}/credit', [WorkflowController::class, 'creditInvoice']);
-    Route::get('/workflows/invoices/{id}/pdf', [InvoicePdfController::class, 'download'])->name('admin.invoices.pdf');
+        Route::post('/invoices/{id}/approve', [WorkflowController::class, 'approveInvoice']);
+        Route::post('/invoices/{id}/send', [WorkflowController::class, 'sendInvoice']);
+        Route::post('/invoices/{id}/mark-paid', [WorkflowController::class, 'markInvoicePaid']);
+        Route::post('/invoices/{id}/cancel', [WorkflowController::class, 'cancelInvoice']);
+        Route::post('/invoices/{id}/credit', [WorkflowController::class, 'creditInvoice']);
+        Route::get('/workflows/invoices/{id}/pdf', [InvoicePdfController::class, 'download'])->name('admin.invoices.pdf');
 
-    Route::post('/orders/{id}/confirm', [WorkflowController::class, 'confirmOrder']);
-    Route::post('/orders/{id}/process', [WorkflowController::class, 'processOrder']);
-    Route::post('/orders/{id}/ship', [WorkflowController::class, 'shipOrder']);
-    Route::post('/orders/{id}/deliver', [WorkflowController::class, 'deliverOrder']);
-    Route::post('/orders/{id}/generate-quotation-invoice', [WorkflowController::class, 'generateQuotationAndInvoiceForOrder']);
-});
+        Route::post('/orders/{id}/confirm', [WorkflowController::class, 'confirmOrder']);
+        Route::post('/orders/{id}/process', [WorkflowController::class, 'processOrder']);
+        Route::post('/orders/{id}/ship', [WorkflowController::class, 'shipOrder']);
+        Route::post('/orders/{id}/deliver', [WorkflowController::class, 'deliverOrder']);
+        Route::post('/orders/{id}/generate-quotation-invoice', [WorkflowController::class, 'generateQuotationAndInvoiceForOrder']);
+    });
 
 Route::post('/profile/locale', [ProfileLocaleController::class, 'update'])
     ->middleware('auth:tenant')
@@ -138,13 +157,13 @@ Route::get('/{tenant}/dashboard', function (string $tenant) {
 Route::get('/{tenant}/{role}/login', function (string $tenant, string $role) {
     return redirect("/{$tenant}/login");
 })->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
-    'role' => 'organization-admin|org_admin|manufacturer|distributor|vendor|consumer',
-])->name('tenant.role.login');
+            'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+            'role' => 'organization-admin|org_admin|manufacturer|distributor|vendor|consumer',
+        ])->name('tenant.role.login');
 
 Route::get('/{tenant}/{role}/dashboard', function (string $tenant, string $role) {
     return redirect('/' . $tenant);
 })->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
-    'role' => 'organization-admin|org_admin|manufacturer|distributor|vendor|consumer',
-])->name('tenant.role.dashboard');
+            'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+            'role' => 'organization-admin|org_admin|manufacturer|distributor|vendor|consumer',
+        ])->name('tenant.role.dashboard');

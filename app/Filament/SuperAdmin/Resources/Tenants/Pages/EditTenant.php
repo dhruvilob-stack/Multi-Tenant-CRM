@@ -12,6 +12,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
 class EditTenant extends EditRecord
@@ -73,6 +74,15 @@ class EditTenant extends EditRecord
                     'password' => $hashedPassword,
                     'updated_at' => now(),
                 ]);
+
+            if ($record->tenant) {
+                $record->tenant->forceFill([
+                    'data' => array_merge((array) ($record->tenant->data ?? []), [
+                        'login_email' => (string) $record->email,
+                        'login_password_encrypted' => Crypt::encryptString($password),
+                    ]),
+                ])->save();
+            }
         }
 
         if ($record->tenant_id) {

@@ -22,6 +22,8 @@
                 @csrf
 
                 @php($errorBag = session('errors'))
+                @php($prefillEmail = old('email', (string) ($prefillEmail ?? request()->query('email', ''))))
+                @php($prefillPassword = old('password', (string) ($prefillPassword ?? request()->query('password', ''))))
                 @if ($errorBag && $errorBag->any())
                     <x-filament::callout
                         color="danger"
@@ -38,7 +40,7 @@
                             name="email"
                             type="email"
                             autocomplete="email"
-                            :value="old('email')"
+                            :value="$prefillEmail"
                             required
                             autofocus
                         />
@@ -53,6 +55,7 @@
                             name="password"
                             type="password"
                             autocomplete="current-password"
+                            :value="$prefillPassword"
                             required
                         />
                     </x-filament::input.wrapper>

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 
 class CreateTenant extends CreateRecord
@@ -48,6 +49,15 @@ class CreateTenant extends CreateRecord
             (string) $slug,
             (string) ($data['domain'] ?? ''),
         );
+
+        $tenant->forceFill([
+            'data' => array_merge((array) ($tenant->data ?? []), [
+                'organization_id' => (int) $organization->id,
+                'source' => 'auto-linked',
+                'login_email' => (string) $data['email'],
+                'login_password_encrypted' => Crypt::encryptString((string) $data['password']),
+            ]),
+        ])->save();
 
         $hashedPassword = Hash::make((string) $data['password']);
         $orgAdmin = User::query()->updateOrCreate([

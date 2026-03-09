@@ -71,7 +71,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::SCRIPTS_AFTER, fn() => view('filament.components.sidebar-spa-sync'))
             ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn() => view('filament.components.navigation-order-shortcut'))
             ->navigation(
-                fn (NavigationBuilder $builder, NavigationManager $navigationManager): NavigationBuilder => app(NavigationPreferenceManager::class)
+                fn(NavigationBuilder $builder, NavigationManager $navigationManager): NavigationBuilder => app(NavigationPreferenceManager::class)
                     ->applyToBuilderForCurrentUser($builder, $panel, $navigationManager)
             )
             ->discoverClusters(in: app_path('Filament/Clusters'), for: 'App\\Filament\\Clusters')
