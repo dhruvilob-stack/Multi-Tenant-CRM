@@ -50,6 +50,10 @@ class CreateTenant extends CreateRecord
             (string) ($data['domain'] ?? ''),
         );
 
+        // Tenant lifecycle may mutate slug/domain/database (including DB rename).
+        // Re-read the tenant so later DB activation uses the latest database name.
+        $tenant = $tenant->fresh() ?? $tenant;
+
         $tenant->forceFill([
             'data' => array_merge((array) ($tenant->data ?? []), [
                 'organization_id' => (int) $organization->id,

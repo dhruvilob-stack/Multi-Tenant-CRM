@@ -5,7 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\SuperAdmin\Resources\Users\UserResource;
 use App\Filament\Widgets\Concerns\ResolvesPanelResourceAccess;
 use App\Models\Invoice;
-use App\Models\Tenant;
+use App\Models\Organization;
 use App\Services\TenantUserSyncService;
 use App\Support\SystemSettings;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -29,8 +29,8 @@ class SuperAdminPlatformStats extends BaseWidget
     {
         app(TenantUserSyncService::class)->syncAllTenantsToLandlord();
 
-        $tenantCount = Tenant::query()->count();
-        $activeTenantCount = Tenant::query()
+        $tenantCount = Organization::query()->count();
+        $activeTenantCount = Organization::query()
             ->where('status', 'active')
             ->count();
         $userCount = UserResource::getEloquentQuery()->count();

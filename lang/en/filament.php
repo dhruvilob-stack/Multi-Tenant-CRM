@@ -115,7 +115,7 @@ return [
             'settings' => [
                 'nav' => 'Global Settings',
                 'heading' => 'Global Settings',
-                'description' => 'Configure defaults for tax, currency, invitation expiry, and panel branding.',
+                'description' => 'Configure defaults for Maintenance Mode, currency, Timezone, and panel branding.',
             ],
         ],
     ],

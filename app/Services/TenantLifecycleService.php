@@ -13,7 +13,7 @@ use Throwable;
 
 class TenantLifecycleService
 {
-    public function deleteOrganizationTenant(Organization $organization): void
+    public function deleteOrganizationTenant(Organization $organization, bool $deleteOrganization = true): void
     {
         $tenant = $organization->tenant;
 
@@ -23,7 +23,7 @@ class TenantLifecycleService
             $this->dropTenantDatabase($tenant);
         }
 
-        DB::connection(config('tenancy.landlord_connection', 'landlord'))->transaction(function () use ($organization, $tenant): void {
+        DB::connection(config('tenancy.landlord_connection', 'landlord'))->transaction(function () use ($organization, $tenant, $deleteOrganization): void {
             User::query()->where('organization_id', $organization->id)->delete();
 
             try {
@@ -32,7 +32,9 @@ class TenantLifecycleService
                 // Ignore if pivot table is unavailable in a specific environment.
             }
 
-            $organization->delete();
+            if ($deleteOrganization) {
+                $organization->delete();
+            }
 
             if ($tenant) {
                 $tenant->delete();

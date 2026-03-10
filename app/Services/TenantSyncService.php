@@ -22,12 +22,14 @@ class TenantSyncService
                 return $existing;
             }
 
+            $slug = $this->uniqueSlug($organization);
+
             $tenant = Tenant::on($landlordConnection)->create([
                 'id' => (string) $organization->tenant_id,
                 'name' => $organization->name ?: ('Organization ' . $organization->id),
-                'slug' => $this->uniqueSlug($organization),
+                'slug' => $slug,
                 'domain' => $this->uniqueDomain($organization),
-                'database' => $this->databaseNameFor($organization),
+                'database' => $this->databaseNameForSlug($slug),
                 'db_host' => config('tenancy.default_tenant_db_host'),
                 'db_port' => (string) config('tenancy.default_tenant_db_port'),
                 'db_username' => config('tenancy.default_tenant_db_username'),
@@ -44,12 +46,14 @@ class TenantSyncService
             return $tenant;
         }
 
+        $slug = $this->uniqueSlug($organization);
+
         $tenant = Tenant::on($landlordConnection)->create([
             'id' => (string) Str::uuid(),
             'name' => $organization->name ?: ('Organization ' . $organization->id),
-            'slug' => $this->uniqueSlug($organization),
+            'slug' => $slug,
             'domain' => $this->uniqueDomain($organization),
-            'database' => $this->databaseNameFor($organization),
+            'database' => $this->databaseNameForSlug($slug),
             'db_host' => config('tenancy.default_tenant_db_host'),
             'db_port' => (string) config('tenancy.default_tenant_db_port'),
             'db_username' => config('tenancy.default_tenant_db_username'),
@@ -127,14 +131,10 @@ class TenantSyncService
         return trim((string) ($organization->slug ?: Str::slug((string) $organization->name)));
     }
 
-    protected function databaseNameFor(Organization $organization): string
+    protected function databaseNameForSlug(string $slug): string
     {
         $prefix = (string) config('tenancy.database_prefix', 'tenant_');
-        $slug = $this->baseSlug($organization);
-
-        if ($slug === '') {
-            $slug = 'org_' . ($organization->id ?: Str::lower(Str::random(6)));
-        }
+        $slug = trim($slug) !== '' ? $slug : ('org_' . Str::lower(Str::random(6)));
 
         return Str::lower($prefix . str_replace('-', '_', $slug));
     }

@@ -16,6 +16,7 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Throwable;
+use App\Services\PlatformAuditLogger;
 
 class AuditNotificationService
 {
@@ -38,12 +39,18 @@ class AuditNotificationService
         }
 
         if (! $auditableKeyColumn || ! $this->canPersistPolymorphicKey('audit_logs', $auditableKeyColumn, $modelKey)) {
+            app(PlatformAuditLogger::class)->mirrorFromTenant($model, $payload);
+
             return new AuditLog($payload);
         }
 
         try {
-            return AuditLog::query()->create($payload);
+            $row = AuditLog::query()->create($payload);
+            app(PlatformAuditLogger::class)->mirrorFromTenant($model, $payload);
+
+            return $row;
         } catch (QueryException) {
+            app(PlatformAuditLogger::class)->mirrorFromTenant($model, $payload);
             return new AuditLog($payload);
         }
     }

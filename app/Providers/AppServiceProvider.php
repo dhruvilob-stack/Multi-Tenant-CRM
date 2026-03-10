@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Observers\OrganizationObserver;
 use App\Models\Product;
 use App\Observers\InvoiceItemObserver;
 use App\Observers\InvoiceObserver;
@@ -43,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
         Invoice::observe(InvoiceObserver::class);
         InvoiceItem::observe(InvoiceItemObserver::class);
         Order::observe(OrderObserver::class);
+        Organization::observe(OrganizationObserver::class);
 
         $autoSlug = function (Model $record, string $sourceField = 'name'): void {
             $currentSlug = trim((string) ($record->getAttribute('slug') ?? ''));

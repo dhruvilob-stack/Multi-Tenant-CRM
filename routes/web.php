@@ -23,9 +23,12 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 Route::get('/', function () {
     return view('home', [
-        'superAdminUrl' => url('/super-admin/login'),
-        'tenantDemoUrl' => url('/blueorbit/login') . '?' . http_build_query([
-            'email' => 'blueorbit@gmail.com',
+        'superAdminUrl' => url('/super-admin/login'). '?' . http_build_query([
+            'email' => 'superadmin@example.com',
+            'password' => 'password',
+        ]),
+        'tenantDemoUrl' => url('/swiftbasket/login') . '?' . http_build_query([
+            'email' => 'swiftbasket@gmail.com',
             'password' => 'password',
         ]),
     ]);

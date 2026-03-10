@@ -5,6 +5,7 @@ namespace App\Filament\SuperAdmin\Pages;
 use App\Filament\Concerns\HasDashboardArrangement;
 use App\Filament\Widgets\FeaturesOverview;
 use App\Filament\Widgets\OrganizationRevenueGrowthChart;
+use App\Filament\Widgets\PlatformAuditEventsByTenantChart;
 use App\Filament\Widgets\SuperAdminPlatformStats;
 use App\Models\Organization;
 use Filament\Forms\Components\DatePicker;
@@ -59,6 +60,7 @@ class Dashboard extends BaseDashboard
         return [
             SuperAdminPlatformStats::class,
             OrganizationRevenueGrowthChart::class,
+            PlatformAuditEventsByTenantChart::class,
             FeaturesOverview::class,
         ];
     }

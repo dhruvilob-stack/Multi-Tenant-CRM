@@ -20,5 +20,9 @@ class EmailTemplates extends Page
     {
         return __('filament.super_admin.pages.email_templates.nav');
     }
-}
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+}
