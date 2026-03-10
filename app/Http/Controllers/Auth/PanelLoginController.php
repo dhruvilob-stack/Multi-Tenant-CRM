@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\TenantDatabaseManager;
 use App\Services\TenantResolver;
+use App\Support\TenantUserMirror;
 use App\Support\UserRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -68,6 +69,18 @@ class PanelLoginController extends Controller
 
         $remember = (bool) ($credentials['remember'] ?? false);
 
+        if (Auth::guard('tenant')->check()) {
+            $expectedRole = (string) $request->session()->get('tenant_expected_role', '');
+            Auth::guard('tenant')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            $request->session()->put('tenant_id', $tenantModel->id);
+            $request->session()->put('tenant_slug', $tenantModel->slug ?: $tenantModel->id);
+            if ($expectedRole !== '') {
+                $request->session()->put('tenant_expected_role', $expectedRole);
+            }
+        }
+
         $attempt = fn (): bool => Auth::guard('tenant')->attempt([
             'email' => $credentials['email'],
             'password' => $credentials['password'],
@@ -83,7 +96,37 @@ class PanelLoginController extends Controller
             }
         }
 
-        return redirect('/' . ($tenantModel->slug ?: $tenantModel->id));
+        $tenantSlug = (string) ($tenantModel->slug ?: $tenantModel->id);
+        $organization = Organization::query()
+            ->where('tenant_id', $tenantModel->id)
+            ->first();
+        $user = Auth::guard('tenant')->user();
+
+        if (! $user) {
+            return redirect("/{$tenantSlug}/login");
+        }
+
+        if ($organization && (int) $user->organization_id !== (int) $organization->id) {
+            Auth::guard('tenant')->logout();
+            $request->session()->forget('tenant_expected_role');
+
+            throw ValidationException::withMessages([
+                'email' => 'This account does not belong to the selected organization.',
+            ]);
+        }
+
+        $expectedRole = (string) $request->session()->pull('tenant_expected_role', '');
+        if ($expectedRole !== '' && (string) $user->role !== $expectedRole) {
+            Auth::guard('tenant')->logout();
+
+            throw ValidationException::withMessages([
+                'email' => 'Role mismatch for this login URL.',
+            ]);
+        }
+
+        TenantUserMirror::syncToLandlord($user);
+
+        return redirect($this->roleLandingPath($tenantSlug, (string) $user->role));
     }
 
     private function syncTenantUserFromLandlord(Tenant $tenant, string $email): void
@@ -136,5 +179,16 @@ class PanelLoginController extends Controller
                 'updated_at' => now(),
             ]
         );
+    }
+
+    private function roleLandingPath(string $tenantSlug, string $role): string
+    {
+        return match ($role) {
+            UserRole::MANUFACTURER => "/{$tenantSlug}/manufacturer",
+            UserRole::DISTRIBUTOR => "/{$tenantSlug}/distributor",
+            UserRole::VENDOR => "/{$tenantSlug}/vendor",
+            UserRole::CONSUMER => "/{$tenantSlug}/consumer",
+            default => "/{$tenantSlug}",
+        };
     }
 }

@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 class VendorResource extends Resource
 {
     protected static ?string $model = User::class;
-    protected static ?string $slug = 'vendors';
+    protected static ?string $slug = 'vendor';
     protected static ?string $navigationLabel = 'Vendors';
     protected static ?string $modelLabel = 'Vendor';
     protected static string|\UnitEnum|null $navigationGroup = 'Structure';
@@ -89,7 +89,7 @@ class VendorResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return UserForm::configure($schema);
+        return UserForm::configure($schema, UserRole::VENDOR);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -112,7 +112,5 @@ class VendorResource extends Resource
         ];
     }
 }
-
-
 
 

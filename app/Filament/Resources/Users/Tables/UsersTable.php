@@ -3,7 +3,11 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Filament\Support\ResourceDataExchange;
+use App\Models\User;
+use App\Support\UserRole;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -33,11 +37,24 @@ class UsersTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                Action::make('login_as')
+                    ->label('Login As')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->url(fn (User $record): string => route('tenant.impersonate.start', [
+                        'tenant' => (string) request()->route('tenant'),
+                        'user' => $record,
+                    ]))
+                    ->visible(fn (User $record): bool => auth()->user()?->role === UserRole::ORG_ADMIN
+                        && (int) $record->id !== (int) auth()->id()
+                        && in_array((string) $record->role, [UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR, UserRole::CONSUMER], true)),
+                DeleteAction::make()
+                    ->visible(fn (): bool => in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
             ])
             ->toolbarActions([
                 ...ResourceDataExchange::toolbarActions('users'),
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->visible(fn (): bool => in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
                 ]),
             ]);
     }

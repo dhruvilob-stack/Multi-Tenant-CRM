@@ -13,7 +13,7 @@
                 </thead>
                 <tbody>
                     @forelse($this->messages as $m)
-                        <tr class="border-b align-top {{ $m['read_at'] ? '' : 'font-semibold' }}">
+                        <tr wire:key="starred-mail-{{ $m['id'] }}" class="border-b align-top {{ $m['read_at'] ? '' : 'font-semibold' }}">
                             <td class="py-2">
                                 <button type="button" wire:click="toggleFeatured({{ $m['id'] }})" class="text-lg leading-none">
                                     {{ $m['featured'] ? '★' : '☆' }}

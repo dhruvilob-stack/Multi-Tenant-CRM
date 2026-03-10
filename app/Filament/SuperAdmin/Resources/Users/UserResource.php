@@ -10,11 +10,13 @@ use App\Filament\SuperAdmin\Resources\Users\Schemas\UserForm;
 use App\Filament\SuperAdmin\Resources\Users\Schemas\UserInfolist;
 use App\Filament\SuperAdmin\Resources\Users\Tables\UsersTable;
 use App\Models\User;
+use App\Services\TenantUserSyncService;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
 {
@@ -41,6 +43,13 @@ class UserResource extends Resource
         return UsersTable::configure($table);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        app(TenantUserSyncService::class)->syncAllTenantsToLandlord();
+
+        return parent::getEloquentQuery()->withoutGlobalScopes();
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -58,7 +67,6 @@ class UserResource extends Resource
         ];
     }
 }
-
 
 
 

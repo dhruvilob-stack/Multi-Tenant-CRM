@@ -14,14 +14,13 @@ use App\Services\GeminiMailAssistantService;
 use App\Services\OrganizationMailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class MailComposerController extends Controller
 {
     public function send(Request $request, OrganizationMailService $mailService): JsonResponse
     {
-        $sender = Auth::user();
+        $sender = auth('tenant')->user();
 
         if (! $sender) {
             return response()->json(['message' => 'Unauthorized.'], 401);
@@ -71,17 +70,31 @@ class MailComposerController extends Controller
 
     public function assist(Request $request, GeminiMailAssistantService $assistant): JsonResponse
     {
+        $sender = auth('tenant')->user();
+        if (! $sender) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
         $request->validate([
             'subject' => ['nullable', 'string', 'max:255'],
             'body' => ['required', 'string'],
-            'mode' => ['nullable', 'string', 'in:draft,improve,formal,shorten'],
+            'to' => ['nullable', 'string'],
+            'mode' => ['nullable', 'string', 'in:autocomplete,suggestion,full,draft,improve,formal,shorten'],
         ]);
 
         try {
-            $text = $assistant->assist(
+            $mode = (string) $request->input('mode', 'suggestion');
+            $normalizedMode = match ($mode) {
+                'full', 'draft' => 'full',
+                'autocomplete' => 'autocomplete',
+                default => 'suggestion',
+            };
+            $result = $assistant->generateWithContext(
+                sender: $sender,
                 subject: (string) $request->input('subject', ''),
                 body: (string) $request->input('body', ''),
-                mode: (string) $request->input('mode', 'improve'),
+                mode: $normalizedMode,
+                recipientEmails: $this->parseEmails((string) $request->input('to', '')),
             );
         } catch (ValidationException $e) {
             return response()->json([
@@ -98,7 +111,8 @@ class MailComposerController extends Controller
 
         return response()->json([
             'ok' => true,
-            'body' => $text,
+            'mode' => $normalizedMode,
+            ...$result,
         ]);
     }
 
@@ -135,9 +149,10 @@ class MailComposerController extends Controller
 
     private function organizationSignature(): string
     {
-        $organization = auth()->user()?->organization;
+        $tenantUser = auth('tenant')->user();
+        $organization = $tenantUser?->organization;
         $name = e((string) ($organization?->name ?? 'Organization'));
-        $email = e((string) (auth()->user()?->email ?? ''));
+        $email = e((string) ($tenantUser?->email ?? ''));
         $logo = $organization?->logo ? asset('storage/'.$organization->logo) : null;
         $logoHtml = $logo ? '<p><img src="'.e($logo).'" style="max-height:48px;" alt="logo"></p>' : '';
 

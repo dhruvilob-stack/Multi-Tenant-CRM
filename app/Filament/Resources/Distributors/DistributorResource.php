@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 class DistributorResource extends Resource
 {
     protected static ?string $model = User::class;
-    protected static ?string $slug = 'distributors';
+    protected static ?string $slug = 'distributor';
     protected static ?string $navigationLabel = 'Distributors';
     protected static ?string $modelLabel = 'Distributor';
     protected static string|\UnitEnum|null $navigationGroup = 'Structure';
@@ -86,7 +86,7 @@ class DistributorResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return UserForm::configure($schema);
+        return UserForm::configure($schema, UserRole::DISTRIBUTOR);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -109,7 +109,5 @@ class DistributorResource extends Resource
         ];
     }
 }
-
-
 
 

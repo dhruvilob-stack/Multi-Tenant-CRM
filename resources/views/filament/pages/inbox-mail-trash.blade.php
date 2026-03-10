@@ -12,7 +12,7 @@
                 </thead>
                 <tbody>
                     @forelse($this->messages as $m)
-                        <tr class="border-b">
+                        <tr wire:key="trash-mail-{{ $m['id'] }}" class="border-b">
                             <td class="py-2">{{ $m['subject'] }}</td>
                             <td class="py-2">{{ $m['from'] }}</td>
                             <td class="py-2">{{ $m['sent_at'] }}</td>

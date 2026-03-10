@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\ApplyUserLocale;
 use App\Http\Middleware\InitializeTenancy;
+use App\Http\Middleware\RewriteRolePrefixedTenantPath;
 use App\Http\Middleware\RedirectPanelLoginToUniversalLogin;
 use App\Http\Middleware\SetFilamentPanelFromReferer;
 use App\Http\Middleware\SetPanelSessionCookie;
@@ -18,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend([
+            RewriteRolePrefixedTenantPath::class,
+        ]);
+
         $middleware->web(prepend: [
             SetPanelSessionCookie::class,
         ]);

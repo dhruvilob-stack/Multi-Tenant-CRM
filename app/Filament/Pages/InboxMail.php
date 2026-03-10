@@ -272,4 +272,5 @@ class InboxMail extends Page
             ->title('Mailbox cleared')
             ->send();
     }
+
 }

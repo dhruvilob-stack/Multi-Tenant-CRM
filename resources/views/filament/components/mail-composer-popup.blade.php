@@ -220,5 +220,237 @@
         document.addEventListener('mail-compose-sent', () => closeComposer());
         document.addEventListener('DOMContentLoaded', sync);
         document.addEventListener('livewire:navigated', sync);
+
+        const decodeSuggestionText = (html) => {
+            try {
+                const div = document.createElement('div');
+                div.innerHTML = String(html || '');
+                return (div.textContent || '').replace(/\s+/g, ' ').trim();
+            } catch (_) {
+                return '';
+            }
+        };
+
+        const getCsrfToken = () =>
+            document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        const resolveTenantPrefix = () => {
+            const path = String(window.location.pathname || '/');
+            const parts = path.split('/').filter(Boolean);
+            // Tenant is always first path segment in this app: /{tenant}/...
+            const tenant = parts[0] || '';
+            return tenant ? `/${tenant}` : '';
+        };
+
+        const findComposerRoot = () => win.querySelector('[wire\\:id]') || win;
+
+        const findEditorEl = () => {
+            const rootEl = findComposerRoot();
+            return rootEl.querySelector('.fi-fo-rich-editor .tiptap') || rootEl.querySelector('.tiptap');
+        };
+
+        const findToInput = () => win.querySelector('input[wire\\:model\\.defer=\"to\"]');
+        const findSubjectInput = () => win.querySelector('input[wire\\:model\\.defer=\"subject\"]');
+
+        const ensureGhost = () => {
+            let ghost = win.querySelector('#mail-ai-ghost');
+            if (ghost) return ghost;
+            ghost = document.createElement('span');
+            ghost.id = 'mail-ai-ghost';
+            ghost.style.position = 'fixed';
+            ghost.style.pointerEvents = 'none';
+            ghost.style.zIndex = '9999';
+            ghost.style.color = 'rgba(107, 114, 128, 0.85)';
+            ghost.style.fontSize = '12px';
+            ghost.style.background = 'transparent';
+            ghost.style.whiteSpace = 'pre';
+            ghost.style.display = 'none';
+            document.body.appendChild(ghost);
+            return ghost;
+        };
+
+        const placeGhostAtCaret = (ghost, text) => {
+            if (!ghost) return;
+            const sel = window.getSelection?.();
+            if (!sel || sel.rangeCount === 0) return;
+            const range = sel.getRangeAt(0).cloneRange();
+            range.collapse(true);
+
+            const rect = range.getBoundingClientRect();
+            if (!rect || (!rect.left && !rect.top && !rect.width && !rect.height)) {
+                ghost.style.display = 'none';
+                return;
+            }
+
+            ghost.textContent = text;
+            ghost.style.left = Math.max(8, rect.left + 2) + 'px';
+            ghost.style.top = Math.max(8, rect.top + 2) + 'px';
+            ghost.style.display = text ? 'block' : 'none';
+        };
+
+        const insertTextAtCaret = (text) => {
+            const el = findEditorEl();
+            if (!el) return false;
+            el.focus();
+
+            // Prefer execCommand for rich editors that intercept input.
+            if (document.queryCommandSupported?.('insertText')) {
+                return document.execCommand('insertText', false, text);
+            }
+
+            try {
+                const sel = window.getSelection?.();
+                if (!sel || sel.rangeCount === 0) return false;
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(document.createTextNode(text));
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        };
+
+        let aiTimer = null;
+        let aiAbort = null;
+        let aiSuggestion = '';
+        let aiLastInput = '';
+        let aiBusy = false;
+
+        const requestAutocomplete = async () => {
+            const editor = findEditorEl();
+            if (!editor) return;
+
+            const currentText = (editor.innerText || '').replace(/\s+/g, ' ').trim();
+            if (currentText.length < 10) {
+                aiSuggestion = '';
+                return;
+            }
+
+            // Avoid repeated calls for identical input.
+            if (currentText === aiLastInput) return;
+            aiLastInput = currentText;
+
+            // Only suggest after user finishes a word.
+            const lastChar = currentText.slice(-1);
+            if (!/[a-z0-9\.\,\!\?\)]/i.test(lastChar)) {
+                return;
+            }
+
+            if (aiAbort) {
+                try { aiAbort.abort(); } catch (_) {}
+            }
+            aiAbort = new AbortController();
+            aiBusy = true;
+
+            const to = (findToInput()?.value || '').trim();
+            const subject = (findSubjectInput()?.value || '').trim();
+            const body = currentText.slice(-900); // send tail for continuation
+
+            try {
+                const tenantPrefix = resolveTenantPrefix();
+                if (!tenantPrefix) return;
+
+                const res = await fetch(`${tenantPrefix}/mail/compose/assist`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getCsrfToken(),
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        to,
+                        subject,
+                        body,
+                        mode: 'autocomplete',
+                    }),
+                    signal: aiAbort.signal,
+                });
+
+                if (!res.ok) {
+                    aiSuggestion = '';
+                    return;
+                }
+                const json = await res.json();
+                const html = json?.suggestion_html || '';
+                const suggestionText = decodeSuggestionText(html);
+                aiSuggestion = suggestionText;
+            } catch (_) {
+                // ignore
+            } finally {
+                aiBusy = false;
+            }
+        };
+
+        const scheduleAutocomplete = () => {
+            if (aiTimer) clearTimeout(aiTimer);
+            aiTimer = setTimeout(requestAutocomplete, 650);
+        };
+
+        const bootInlineAi = () => {
+            const editor = findEditorEl();
+            if (!editor) return;
+            if (editor.dataset.aiInlineBound === '1') return;
+            editor.dataset.aiInlineBound = '1';
+
+            const ghost = ensureGhost();
+
+            const refreshGhost = () => {
+                if (!aiSuggestion) {
+                    ghost.style.display = 'none';
+                    return;
+                }
+
+                // Only show first "word" suggestion.
+                const firstWord = aiSuggestion.split(/\s+/).slice(0, 1).join(' ').trim();
+                placeGhostAtCaret(ghost, firstWord ? ` ${firstWord}` : '');
+            };
+
+            editor.addEventListener('input', () => {
+                aiSuggestion = '';
+                refreshGhost();
+                scheduleAutocomplete();
+            });
+
+            editor.addEventListener('keyup', () => {
+                refreshGhost();
+            });
+            editor.addEventListener('click', () => {
+                refreshGhost();
+            });
+            document.addEventListener('selectionchange', () => {
+                if (document.activeElement === editor) refreshGhost();
+            });
+
+            editor.addEventListener('keydown', (e) => {
+                if (e.key !== 'Tab') return;
+                if (!aiSuggestion) return;
+
+                e.preventDefault();
+
+                const firstWord = aiSuggestion.split(/\s+/).slice(0, 1).join(' ').trim();
+                if (!firstWord) return;
+
+                if (insertTextAtCaret(' ' + firstWord)) {
+                    aiSuggestion = aiSuggestion.replace(new RegExp('^\\s*' + firstWord.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '\\b'), '').trim();
+                    refreshGhost();
+                    scheduleAutocomplete();
+                }
+            });
+
+            // Initial schedule when opening composer.
+            scheduleAutocomplete();
+        };
+
+        const bootInlineAiWithRetry = () => {
+            bootInlineAi();
+            setTimeout(bootInlineAi, 250);
+            setTimeout(bootInlineAi, 900);
+        };
+
+        window.addEventListener('open-mail-composer', bootInlineAiWithRetry);
+        document.addEventListener('livewire:navigated', bootInlineAiWithRetry);
     })();
 </script>

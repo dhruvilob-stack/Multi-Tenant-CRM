@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 class ConsumerResource extends Resource
 {
     protected static ?string $model = User::class;
-    protected static ?string $slug = 'consumers';
+    protected static ?string $slug = 'consumer';
     protected static ?string $navigationLabel = 'Consumers';
     protected static ?string $modelLabel = 'Consumer';
     protected static string|\UnitEnum|null $navigationGroup = 'Structure';
@@ -89,7 +89,7 @@ class ConsumerResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return UserForm::configure($schema);
+        return UserForm::configure($schema, UserRole::CONSUMER);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -112,7 +112,5 @@ class ConsumerResource extends Resource
         ];
     }
 }
-
-
 
 

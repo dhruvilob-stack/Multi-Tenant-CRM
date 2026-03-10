@@ -12,7 +12,7 @@ use Filament\Schemas\Schema;
 
 class UserForm
 {
-    public static function configure(Schema $schema): Schema
+    public static function configure(Schema $schema, ?string $fixedRole = null): Schema
     {
         return $schema
             ->components([
@@ -30,7 +30,10 @@ class UserForm
                     ->minLength(8),
                 Select::make('role')
                     ->options(array_combine(UserRole::all(), UserRole::all()))
-                    ->required(),
+                    ->default($fixedRole)
+                    ->disabled(filled($fixedRole))
+                    ->dehydrated(fn () => blank($fixedRole))
+                    ->required(blank($fixedRole)),
                 Select::make('custom_role_id')
                     ->label('Custom Role')
                     ->options(CustomRole::query()->where('is_active', true)->pluck('name', 'id'))
@@ -39,6 +42,9 @@ class UserForm
                 Select::make('organization_id')
                     ->label('Organization')
                     ->options(Organization::query()->pluck('name', 'id'))
+                    ->default(fn () => auth()->user()?->organization_id)
+                    ->disabled(fn () => auth()->user()?->role !== UserRole::SUPER_ADMIN)
+                    ->dehydrated(fn () => auth()->user()?->role === UserRole::SUPER_ADMIN)
                     ->searchable()
                     ->preload(),
                 Select::make('parent_id')

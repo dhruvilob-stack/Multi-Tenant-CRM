@@ -8,6 +8,8 @@ use App\Http\Controllers\Auth\PanelLoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\Admin\WorkflowController;
 use App\Http\Controllers\Admin\InvoicePdfController;
+use App\Http\Controllers\Admin\ImpersonationController;
+use App\Http\Controllers\Admin\UserPanelAccessController;
 use App\Http\Controllers\ProfileLocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationSectionController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\OrganizationMailAttachmentController;
 use App\Http\Controllers\SuperAdmin\TenantPanelAccessController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -128,6 +131,29 @@ Route::middleware('auth:super_admin')->get(
     [TenantPanelAccessController::class, 'openAdmin']
 )->name('super-admin.tenants.open-admin');
 
+Route::get(
+    '/{tenant}/org-admin/users/{user}/open-panel',
+    [UserPanelAccessController::class, 'open']
+)->where([
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'user' => '[0-9]+',
+])->name('org-admin.users.open-panel');
+
+Route::get(
+    '/{tenant}/impersonate/{user}',
+    [ImpersonationController::class, 'start']
+)->where([
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'user' => '[0-9]+',
+])->name('tenant.impersonate.start');
+
+Route::get(
+    '/{tenant}/stop-impersonation',
+    [ImpersonationController::class, 'stop']
+)->where([
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+])->name('tenant.impersonate.stop');
+
 Route::middleware('auth:tenant')->prefix('filament/notifications/sections')->group(function (): void {
     Route::get('/counts', [NotificationSectionController::class, 'counts'])
         ->name('filament.notifications.sections.counts');
@@ -155,15 +181,117 @@ Route::get('/{tenant}/dashboard', function (string $tenant) {
     ->name('tenant.dashboard');
 
 Route::get('/{tenant}/{role}/login', function (string $tenant, string $role) {
-    return redirect("/{$tenant}/login");
+    $normalizedRole = match (strtolower(trim($role))) {
+        'manufacturer', 'manufacturers' => 'manufacturer',
+        'distributor', 'distributors' => 'distributor',
+        'vendor', 'vendors' => 'vendor',
+        'consumer', 'consumers' => 'consumer',
+        'organization-admin', 'organization-admins', 'org_admin' => 'org_admin',
+        default => null,
+    };
+
+    abort_if($normalizedRole === null, 404, 'Invalid role.');
+
+    $landing = match ($normalizedRole) {
+        'manufacturer' => "/{$tenant}/manufacturer",
+        'distributor' => "/{$tenant}/distributor",
+        'vendor' => "/{$tenant}/vendor",
+        'consumer' => "/{$tenant}/consumer",
+        default => "/{$tenant}",
+    };
+
+    request()->session()->put('tenant_expected_role', $normalizedRole);
+    request()->session()->put('url.intended', $landing);
+
+    $token = trim((string) request()->query('oa_prefill', request()->query('sa_prefill', '')));
+    $prefillEmail = (string) request()->query('email', '');
+    $prefillPassword = (string) request()->query('password', '');
+
+    if ($token !== '') {
+        try {
+            $raw = Crypt::decryptString($token);
+            $payload = json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
+            $issuedAt = (int) ($payload['issued_at'] ?? 0);
+            $sameTenant = (string) ($payload['tenant'] ?? '') === $tenant;
+            $isFresh = $issuedAt > 0 && (time() - $issuedAt) <= 300;
+
+            if ($sameTenant && $isFresh) {
+                $prefillEmail = (string) ($payload['email'] ?? $prefillEmail);
+                $prefillPassword = (string) ($payload['password'] ?? $prefillPassword);
+            }
+        } catch (\Throwable) {
+            // Ignore invalid token and fall back to plain query prefill.
+        }
+    }
+
+    return response()->view('auth.tenant-login', [
+        'tenant' => $tenant,
+        'role' => $normalizedRole,
+        'action' => url("/{$tenant}/login"),
+        'prefillEmail' => $prefillEmail,
+        'prefillPassword' => $prefillPassword,
+    ]);
 })->where([
             'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
-            'role' => 'organization-admin|org_admin|manufacturer|distributor|vendor|consumer',
+            'role' => 'organization-admin|org_admin|organization-admins|manufacturer|manufacturers|distributor|distributors|vendor|vendors|consumer|consumers',
         ])->name('tenant.role.login');
 
 Route::get('/{tenant}/{role}/dashboard', function (string $tenant, string $role) {
-    return redirect('/' . $tenant);
+    $normalizedRole = match (strtolower(trim($role))) {
+        'manufacturer', 'manufacturers' => 'manufacturer',
+        'distributor', 'distributors' => 'distributor',
+        'vendor', 'vendors' => 'vendor',
+        'consumer', 'consumers' => 'consumer',
+        'organization-admin', 'organization-admins', 'org_admin' => 'org_admin',
+        default => null,
+    };
+
+    abort_if($normalizedRole === null, 404, 'Invalid role.');
+
+    return redirect(match ($normalizedRole) {
+        'manufacturer' => "/{$tenant}/manufacturer",
+        'distributor' => "/{$tenant}/distributor",
+        'vendor' => "/{$tenant}/vendor",
+        'consumer' => "/{$tenant}/consumer",
+        default => "/{$tenant}",
+    });
 })->where([
             'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
-            'role' => 'organization-admin|org_admin|manufacturer|distributor|vendor|consumer',
+            'role' => 'organization-admin|org_admin|organization-admins|manufacturer|manufacturers|distributor|distributors|vendor|vendors|consumer|consumers',
         ])->name('tenant.role.dashboard');
+
+Route::get('/{tenant}/distributors/{path?}', function (string $tenant, ?string $path = null) {
+    $target = "/{$tenant}/distributor";
+    if (filled($path)) {
+        $target .= '/'.ltrim($path, '/');
+    }
+
+    return redirect($target);
+})->where([
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'path' => '.*',
+]);
+
+Route::get('/{tenant}/vendors/{path?}', function (string $tenant, ?string $path = null) {
+    $target = "/{$tenant}/vendor";
+    if (filled($path)) {
+        $target .= '/'.ltrim($path, '/');
+    }
+
+    return redirect($target);
+})->where([
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'path' => '.*',
+]);
+
+Route::get('/{tenant}/consumers/{path?}', function (string $tenant, ?string $path = null) {
+    $target = "/{$tenant}/consumer";
+    if (filled($path)) {
+        $target .= '/'.ltrim($path, '/');
+    }
+
+    return redirect($target);
+})->where([
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'path' => '.*',
+]);

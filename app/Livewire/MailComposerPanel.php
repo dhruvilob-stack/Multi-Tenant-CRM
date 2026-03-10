@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Product;
+use App\Services\GeminiMailAssistantService;
 use App\Services\OrganizationMailService;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -19,6 +20,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Tiptap\Editor;
 
@@ -41,6 +43,7 @@ class MailComposerPanel extends Component implements HasActions, HasForms
     public ?string $recordSelection = null;
     public array $recordOptions = [];
     public array $recordUrls = [];
+    public bool $aiBusy = false;
 
     protected $listeners = [
         'mail-compose-prefill' => 'prefill',
@@ -202,7 +205,7 @@ class MailComposerPanel extends Component implements HasActions, HasForms
             'data.content' => ['required', 'string'],
         ]);
 
-        $sender = auth()->user();
+        $sender = auth('tenant')->user();
         if (! $sender) {
             return;
         }
@@ -231,6 +234,56 @@ class MailComposerPanel extends Component implements HasActions, HasForms
             ->success()
             ->title('Mail sent')
             ->send();
+    }
+
+    public function generateAiFullDraft(): void
+    {
+        $sender = auth('tenant')->user();
+        if (! $sender) {
+            return;
+        }
+
+        $this->aiBusy = true;
+
+        try {
+            $result = app(GeminiMailAssistantService::class)->generateWithContext(
+                sender: $sender,
+                subject: (string) $this->subject,
+                body: $this->normalizeEditorContent($this->data['content'] ?? null),
+                mode: 'full',
+                recipientEmails: $this->parseEmails($this->to),
+            );
+
+            $draft = trim((string) ($result['full_email_html'] ?? ''));
+            if ($draft === '') {
+                throw ValidationException::withMessages([
+                    'gemini' => 'AI returned an empty draft.',
+                ]);
+            }
+
+            $this->data['content'] = $draft;
+            $this->form->fill(['content' => $draft]);
+
+            Notification::make()
+                ->success()
+                ->title('AI draft generated')
+                ->send();
+        } catch (ValidationException $e) {
+            Notification::make()
+                ->danger()
+                ->title('AI draft failed')
+                ->body((string) collect($e->errors())->flatten()->first())
+                ->send();
+        } catch (\Throwable $e) {
+            report($e);
+            Notification::make()
+                ->danger()
+                ->title('AI draft failed')
+                ->body('Please try again.')
+                ->send();
+        } finally {
+            $this->aiBusy = false;
+        }
     }
 
 
@@ -402,9 +455,10 @@ class MailComposerPanel extends Component implements HasActions, HasForms
 
     private function organizationSignature(): string
     {
-        $organization = auth()->user()?->organization;
+        $tenantUser = auth('tenant')->user();
+        $organization = $tenantUser?->organization;
         $name = e((string) ($organization?->name ?? 'Organization'));
-        $email = e((string) (auth()->user()?->email ?? ''));
+        $email = e((string) ($tenantUser?->email ?? ''));
         $logo = $organization?->logo ? asset('storage/'.$organization->logo) : null;
         $logoHtml = $logo ? '<p><img src="'.e($logo).'" style="max-height:48px;" alt="logo"></p>' : '';
 

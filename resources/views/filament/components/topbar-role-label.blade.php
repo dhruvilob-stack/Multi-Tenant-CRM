@@ -1,7 +1,9 @@
 @php
+    $tenant = (string) (request()->route('tenant') ?? session('tenant_slug') ?? '');
     $roleLabel = auth()->check()
         ? \Illuminate\Support\Str::of(auth()->user()?->role ?? 'guest')->replace('_', ' ')->upper()->value()
         : null;
+    $isImpersonating = session()->has('impersonator_id') && $tenant !== '';
 @endphp
 
 @if (filled($roleLabel))
@@ -9,6 +11,11 @@
         <x-filament::badge color="primary" class="fi-topbar-role-label">
             {{ $roleLabel }}
         </x-filament::badge>
+        @if ($isImpersonating)
+            <a href="{{ route('tenant.impersonate.stop', ['tenant' => $tenant]) }}" class="fi-impersonation-stop">
+                Return to Admin
+            </a>
+        @endif
     </div>
 
     <style>
@@ -37,6 +44,18 @@
                 opacity: 0.55;
                 box-shadow: 0 0 0 6px rgba(20, 184, 166, 0);
             }
+        }
+
+        .fi-impersonation-stop {
+            margin-inline-start: 0.6rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #0f766e;
+            text-decoration: underline;
+        }
+
+        .dark .fi-impersonation-stop {
+            color: #5eead4;
         }
 
     </style>

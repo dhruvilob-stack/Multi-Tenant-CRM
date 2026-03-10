@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Invitations\Tables;
 
+use App\Filament\Resources\Invitations\InvitationResource;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -27,7 +28,8 @@ class InvitationsTable
             ])
             ->recordActions([
                 ViewAction::make(),
-                EditAction::make(),
+                EditAction::make()
+                    ->visible(fn ($record): bool => InvitationResource::canEdit($record)),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

@@ -9,7 +9,7 @@ use Filament\Support\Icons\Heroicon;
 class DistributorInvitations extends Page
 {
     protected string $view = 'filament.pages.distributor-invitations';
-    protected static ?string $slug = 'distributors/invitations';
+    protected static ?string $slug = 'distributor/invitations';
     protected static string|null|\BackedEnum $navigationIcon = Heroicon::OutlinedEnvelope;
 
     public static function getNavigationGroup(): ?string

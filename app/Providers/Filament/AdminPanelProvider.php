@@ -4,6 +4,8 @@ namespace App\Providers\Filament;
 
 use App\Http\Middleware\ApplyUserLocale;
 use App\Http\Middleware\InitializeTenancy;
+use App\Http\Middleware\RedirectTenantPanelPathToRolePrefix;
+use App\Http\Middleware\RedirectTenantRootToRoleHome;
 use App\Http\Middleware\SetTenantUrlDefaults;
 use App\Http\Middleware\RedirectPanelLoginToUniversalLogin;
 use App\Http\Middleware\SetPanelSessionCookie;
@@ -96,6 +98,8 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
                 ApplyUserLocale::class,
+                RedirectTenantRootToRoleHome::class,
+                RedirectTenantPanelPathToRolePrefix::class,
             ])
             ->authGuard('tenant');
     }

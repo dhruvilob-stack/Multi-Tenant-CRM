@@ -22,9 +22,10 @@ class RedirectPanelLoginToUniversalLogin
 
         if ($request->isMethod('get') && $this->isTenantLoginPath($request)) {
             $tenant = $this->tenantFromPath($request);
-            $prefill = $this->resolveSuperAdminPrefill($request, $tenant);
+            $prefill = $this->resolveTenantPrefill($request, $tenant);
+            $hasPrefillToken = $this->hasPrefillToken($request);
 
-            if (auth('tenant')->check()) {
+            if (auth('tenant')->check() && ! $hasPrefillToken) {
                 return redirect('/' . $tenant);
             }
 
@@ -76,9 +77,14 @@ class RedirectPanelLoginToUniversalLogin
     /**
      * @return array{email: string, password: string}
      */
-    private function resolveSuperAdminPrefill(Request $request, string $tenant): array
+    private function resolveTenantPrefill(Request $request, string $tenant): array
     {
         $token = trim((string) $request->query('sa_prefill', ''));
+
+        if ($token === '') {
+            $token = trim((string) $request->query('oa_prefill', ''));
+        }
+
         if ($token === '') {
             return ['email' => '', 'password' => ''];
         }
@@ -99,5 +105,11 @@ class RedirectPanelLoginToUniversalLogin
             'email' => (string) ($payload['email'] ?? ''),
             'password' => (string) ($payload['password'] ?? ''),
         ];
+    }
+
+    private function hasPrefillToken(Request $request): bool
+    {
+        return filled((string) $request->query('sa_prefill', ''))
+            || filled((string) $request->query('oa_prefill', ''));
     }
 }

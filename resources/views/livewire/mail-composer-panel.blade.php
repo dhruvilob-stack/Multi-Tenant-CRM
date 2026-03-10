@@ -41,6 +41,8 @@
         @error('data.content') <p class="mt-1 text-xs text-danger-600">{{ $message }}</p> @enderror
     </div>
 
+    <div id="mail-ai-inline-suggest" class="hidden text-xs text-gray-500"></div>
+
     <div
         class="rounded-xl border border-gray-200 p-3 dark:border-white/10"
         x-data="{
@@ -82,7 +84,18 @@
 
     <div class="flex items-center justify-between gap-2 border-t border-gray-200 pt-2 dark:border-white/10">
         <div class="flex flex-wrap items-center gap-2">
+            <x-filament::button
+                type="button"
+                size="sm"
+                color="info"
+                wire:click="generateAiFullDraft"
+                wire:loading.attr="disabled"
+                wire:target="generateAiFullDraft"
+            >
+                AI Mail
+            </x-filament::button>
             <x-filament::button type="button" size="sm" color="primary" wire:click="sendMail">Send</x-filament::button>
+            <span class="text-xs text-gray-500" wire:loading wire:target="generateAiFullDraft">Generating AI content...</span>
         </div>
     </div>
 </div>

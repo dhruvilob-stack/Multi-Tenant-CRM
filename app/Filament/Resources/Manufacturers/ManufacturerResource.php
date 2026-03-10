@@ -40,7 +40,7 @@ class ManufacturerResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
+        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
     }
 
     public static function canCreate(): bool
@@ -56,7 +56,7 @@ class ManufacturerResource extends Resource
             return true;
         }
 
-        return $user?->role === UserRole::MANUFACTURER && $record->id === $user->id;
+        return false;
     }
 
     public static function canDelete($record): bool
@@ -81,10 +81,6 @@ class ManufacturerResource extends Resource
             return $query->where('organization_id', $user->organization_id);
         }
 
-        if ($user->role === UserRole::MANUFACTURER) {
-            return $query->whereKey($user->id);
-        }
-
         return $query->whereRaw('1=0');
     }
 
@@ -98,7 +94,7 @@ class ManufacturerResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return UserForm::configure($schema);
+        return UserForm::configure($schema, UserRole::MANUFACTURER);
     }
 
     public static function infolist(Schema $schema): Schema
@@ -121,7 +117,4 @@ class ManufacturerResource extends Resource
         ];
     }
 }
-
-
-
 

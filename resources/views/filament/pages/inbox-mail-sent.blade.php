@@ -12,7 +12,7 @@
                 </thead>
                 <tbody>
                     @forelse($this->messages as $m)
-                        <tr class="border-b align-top">
+                        <tr wire:key="sent-mail-{{ $m['id'] }}" class="border-b align-top">
                             <td class="py-2">{{ $m['subject'] }}</td>
                             <td class="py-2">{{ $m['to'] }}</td>
                             <td class="py-2">{{ $m['sent_at'] }}</td>
