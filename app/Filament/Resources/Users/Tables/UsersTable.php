@@ -41,10 +41,12 @@ class UsersTable
                 Action::make('login_as')
                     ->label('Login As')
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->url(fn (User $record): string => route('tenant.impersonate.start', [
-                        'tenant' => (string) request()->route('tenant'),
-                        'user' => $record,
-                    ]))
+                    ->action(function (User $record, Action $action): void {
+                        $action->redirect(route('tenant.impersonate.start', [
+                            'tenant' => (string) request()->route('tenant'),
+                            'user' => $record,
+                        ]), navigate: false);
+                    })
                     ->visible(fn (User $record): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN
                         && (int) $record->id !== (int) auth('tenant')->id()
                         && in_array((string) $record->role, [UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR, UserRole::CONSUMER], true)),

@@ -67,6 +67,13 @@ class PanelLoginController extends Controller
             'remember' => ['nullable', 'boolean'],
         ]);
 
+        // log each tenant login attempt to help debug loops caused by stale
+        // sessions or unexpected guard behaviour
+        \Log::debug('tenant login request received', [
+            'tenant' => $tenant,
+            'email' => $credentials['email'],
+        ]);
+
         $remember = (bool) ($credentials['remember'] ?? false);
 
         if (Auth::guard('tenant')->check()) {
@@ -86,6 +93,12 @@ class PanelLoginController extends Controller
             'password' => $credentials['password'],
         ], $remember);
 
+        // perform the first attempt, pulling data from the landlord if the
+        // user record happens to be missing. regenerating the session after a
+        // successful login is important – it clears out any leftover state from
+        // previous sessions (an org-admin cookie on a resource device was the
+        // root cause of the redirect loops reported by the user) and protects
+        // against session fixation attacks.
         if (! $attempt()) {
             $this->syncTenantUserFromLandlord($tenantModel, (string) $credentials['email']);
 
@@ -96,11 +109,22 @@ class PanelLoginController extends Controller
             }
         }
 
+        // regenerate once the user is authenticated; we deliberately perform
+        // the action here rather than in the guard so that we can do it even
+        // when the second "sync" attempt succeeds.
+        $request->session()->regenerate();
+
         $tenantSlug = (string) ($tenantModel->slug ?: $tenantModel->id);
         $organization = Organization::query()
             ->where('tenant_id', $tenantModel->id)
             ->first();
         $user = Auth::guard('tenant')->user();
+
+        \Log::debug('tenant login succeeded', [
+            'user_id' => $user?->id,
+            'role' => $user?->role,
+            'tenant_slug' => $tenantSlug,
+        ]);
 
         if (! $user) {
             return redirect("/{$tenantSlug}/login");

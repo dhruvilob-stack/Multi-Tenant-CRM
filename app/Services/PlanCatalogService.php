@@ -15,6 +15,10 @@ class PlanCatalogService
         return collect($plans)
             ->filter(fn ($plan): bool => is_array($plan))
             ->map(fn (array $plan): array => $this->normalizePlan($plan, $settings))
+            ->sortBy(fn (array $plan): array => [
+                (int) ($plan['order'] ?? 0),
+                (string) ($plan['name'] ?? ''),
+            ])
             ->values()
             ->all();
     }
@@ -63,6 +67,10 @@ class PlanCatalogService
             'price' => 0,
             'billing_cycle' => 'month',
             'visible' => true,
+            'popular' => false,
+            'order' => 0,
+            'discount_percent' => null,
+            'discount_label' => null,
             'limits' => [
                 'users' => null,
                 'products' => null,
@@ -78,6 +86,12 @@ class PlanCatalogService
         $plan['price'] = (float) ($plan['price'] ?? 0);
         $plan['currency'] = (string) ($plan['currency'] ?? ($settings['subscription_currency'] ?? 'USD'));
         $plan['billing_cycle'] = (string) ($plan['billing_cycle'] ?? 'month');
+        $plan['popular'] = (bool) ($plan['popular'] ?? false);
+        $plan['order'] = (int) ($plan['order'] ?? 0);
+        $plan['discount_percent'] = is_numeric($plan['discount_percent'] ?? null)
+            ? (float) $plan['discount_percent']
+            : null;
+        $plan['discount_label'] = (string) ($plan['discount_label'] ?? '');
 
         $plan['limits'] = array_replace($defaults['limits'], (array) ($plan['limits'] ?? []));
         foreach (['users', 'products'] as $limitKey) {

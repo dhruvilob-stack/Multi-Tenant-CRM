@@ -35,6 +35,10 @@ class PlatformSettingsService
                     'price' => 999,
                     'billing_cycle' => 'month',
                     'visible' => true,
+                    'popular' => false,
+                    'order' => 0,
+                    'discount_percent' => null,
+                    'discount_label' => null,
                     'limits' => [
                         'users' => 5,
                         'products' => 1000,
@@ -51,6 +55,10 @@ class PlatformSettingsService
                     'price' => 2499,
                     'billing_cycle' => 'month',
                     'visible' => true,
+                    'popular' => true,
+                    'order' => 1,
+                    'discount_percent' => null,
+                    'discount_label' => null,
                     'limits' => [
                         'users' => 25,
                         'products' => 10000,
@@ -67,6 +75,10 @@ class PlatformSettingsService
                     'price' => 4999,
                     'billing_cycle' => 'month',
                     'visible' => true,
+                    'popular' => false,
+                    'order' => 2,
+                    'discount_percent' => null,
+                    'discount_label' => null,
                     'limits' => [
                         'users' => null,
                         'products' => null,

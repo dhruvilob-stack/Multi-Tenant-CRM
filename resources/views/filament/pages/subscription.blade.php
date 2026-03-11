@@ -38,8 +38,7 @@
                             <div class="text-sm text-gray-500">Issued: {{ optional($invoice->issued_at)->format('Y-m-d') }}</div>
                         </div>
                         <div class="text-sm text-gray-600">
-                            @php($displayCurrency = in_array($invoice->payment_method, ['razorpay', 'phonepe'], true) ? 'INR' : $invoice->currency)
-                            Total: {{ number_format((float) $invoice->total_amount, 2) }} {{ $displayCurrency }}
+                            Total: {{ number_format((float) $invoice->total_amount, 2) }} {{ $invoice->currency }}
                         </div>
                         <div class="flex items-center gap-2">
                             <x-filament::badge color="success">{{ strtoupper($invoice->status) }}</x-filament::badge>

@@ -23,11 +23,20 @@ class ImpersonationController extends Controller
         $tenantModel = $tenantResolver->resolveByIdentifier($tenant);
         abort_unless($tenantModel, 404, 'Tenant not found.');
 
+        // record some context for debugging
+        \Log::debug('impersonation.start request', [
+            'tenant' => $tenant,
+            'session_id' => $request->session()->getId(),
+            'cookies' => $request->cookies->all(),
+            'guard_user_before' => Auth::guard('tenant')->user()?->id,
+        ]);
+
         $request->session()->put('tenant_id', $tenantModel->id);
         $request->session()->put('tenant_slug', $tenantModel->slug ?: $tenantModel->id);
         $tenantDatabaseManager->activateTenantConnection($tenantModel);
 
         if (! Auth::guard('tenant')->check()) {
+            \Log::warning('impersonation start: guard check failed, redirecting to login', ['tenant' => $tenant]);
             return redirect("/{$tenant}/login");
         }
 
@@ -61,7 +70,21 @@ class ImpersonationController extends Controller
 
         Auth::guard('tenant')->loginUsingId((int) $target->id);
 
-        return redirect($this->roleLandingPath((string) ($tenantModel->slug ?: $tenantModel->id), (string) $target->role));
+        // dump session after impersonation so we can verify the user ID was saved
+        \Log::debug('impersonation session after login', [
+            'session_data' => $request->session()->all(),
+            'guard_user' => Auth::guard('tenant')->user()?->id,
+        ]);
+
+        // redirect to the panel root with flags that tell our middleware
+        // and client script to behave. the `impersonated` param prevents any
+        // rewriting or redirect logic from running on the first post-login
+        // request, and the client‑side script (re‑added below) will swap the
+        // visible URL to `/{$tenantSlug}/{$role}` afterwards.
+        $role = (string) $target->role;
+        $tenantSlug = (string) ($tenantModel->slug ?: $tenantModel->id);
+
+        return redirect("/{$tenantSlug}?impersonated=1&role_dashboard_alias=1&role={$role}");
     }
 
     public function stop(

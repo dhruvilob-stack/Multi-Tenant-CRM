@@ -24,9 +24,23 @@ class RedirectPanelLoginToUniversalLogin
             $tenant = $this->tenantFromPath($request);
             $prefill = $this->resolveTenantPrefill($request, $tenant);
             $hasPrefillToken = $this->hasPrefillToken($request);
+            // Ensure the shared login URL never inherits a role-specific
+            // expectation from a previous session.
+            $request->session()->forget('tenant_expected_role');
 
             if (auth('tenant')->check() && ! $hasPrefillToken) {
-                return redirect('/' . $tenant);
+                // user already has a tenant session; rather than redirecting
+                // straight through (which could bounce back and forth if the
+                // stored role doesn't match the one they're about to enter) we
+                // log them out and clear the session so they can re-authenticate
+                // cleanly. this also addresses the "too many redirects" issue
+                // seen when a resource opens the login page while still holding
+                // an org-admin cookie.
+                auth('tenant')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                // continue to show the login form below
             }
 
             return response()->view('auth.tenant-login', [

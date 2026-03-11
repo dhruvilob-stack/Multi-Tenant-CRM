@@ -73,6 +73,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::SCRIPTS_AFTER, fn() => view('filament.components.notification-row-highlight'))
             ->renderHook(PanelsRenderHook::SCRIPTS_AFTER, fn() => view('filament.components.notification-navigation-badges'))
             ->renderHook(PanelsRenderHook::SCRIPTS_AFTER, fn() => view('filament.components.sidebar-spa-sync'))
+            ->renderHook(PanelsRenderHook::SCRIPTS_AFTER, fn() => view('filament.components.impersonation-fix'))
             ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn() => view('filament.components.navigation-order-shortcut'))
             ->navigation(
                 fn(NavigationBuilder $builder, NavigationManager $navigationManager): NavigationBuilder => app(NavigationPreferenceManager::class)

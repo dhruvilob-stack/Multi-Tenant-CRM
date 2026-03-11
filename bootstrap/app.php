@@ -23,6 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
             RewriteRolePrefixedTenantPath::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            '*/subscription/phonepe/callback',
+        ]);
+
         $middleware->web(prepend: [
             SetPanelSessionCookie::class,
         ]);

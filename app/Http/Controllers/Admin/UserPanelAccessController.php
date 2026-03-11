@@ -71,22 +71,8 @@ class UserPanelAccessController extends Controller
         ];
 
         $token = Crypt::encryptString(json_encode($payload, JSON_THROW_ON_ERROR));
-        $roleSegment = $this->roleLoginSegment((string) $targetUser->role);
-
-        return redirect("/{$slug}/{$roleSegment}/login?" . http_build_query([
+        return redirect("/{$slug}/login?" . http_build_query([
             'oa_prefill' => $token,
         ]));
-    }
-
-    private function roleLoginSegment(string $role): string
-    {
-        return match ($role) {
-            UserRole::MANUFACTURER => 'manufacturer',
-            UserRole::DISTRIBUTOR => 'distributor',
-            UserRole::VENDOR => 'vendor',
-            UserRole::CONSUMER => 'consumer',
-            UserRole::ORG_ADMIN => 'organization-admin',
-            default => 'organization-admin',
-        };
     }
 }

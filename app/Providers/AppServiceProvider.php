@@ -32,6 +32,11 @@ class AppServiceProvider extends ServiceProvider
             \Filament\Auth\Http\Responses\Contracts\LoginResponse::class,
             \App\Support\FilamentLoginResponse::class
         );
+
+        $this->app->bind(
+            \Filament\Auth\Http\Responses\Contracts\LogoutResponse::class,
+            \App\Support\FilamentLogoutResponse::class
+        );
     }
 
     /**

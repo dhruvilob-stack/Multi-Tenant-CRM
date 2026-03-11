@@ -433,8 +433,8 @@ footer{
     <div class="toggle" id="themeToggle" title="Toggle dark / light mode" role="button" tabindex="0" aria-label="Toggle theme">
       <div class="toggle-icons"><span>☀️</span><span>🌙</span></div>
     </div>
-    <a href="{{ $superAdminUrl }}" target="_blank" class="btn btn-outline">Super Admin Login</a>
-    <a href="{{ $tenantDemoUrl }}" target="_blank" class="btn btn-primary">Tenant Login</a>
+    <a href="{{ $superAdminUrl }}" target="_blank" class="btn btn-outline">Demo Super Admin Login</a>
+    <a href="{{ $tenantDemoUrl }}" target="_blank" class="btn btn-primary">Demo Tenant Login</a>
   </div>
 </nav>
 
@@ -456,11 +456,27 @@ footer{
       <div class="hero-cta">
         <a href="#access" class="btn btn-primary">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Super Admin Login
+         Buy Now
         </a>
         <a href="#access" class="btn btn-outline">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"/></svg>
-          Tenant Demo Login
+          Live Demo  <svg xmlns="http://www.w3.org/2000/svg" 
+     width="18" 
+     height="18" 
+     viewBox="0 0 24 24" 
+     fill="none" 
+     stroke="white" 
+     stroke-width="2.8" 
+     stroke-linecap="round" 
+     stroke-linejoin="round">
+
+  <!-- Arrow head -->
+  <path d="M9 5H19V15" />
+
+  <!-- Diagonal line -->
+  <path d="M19 5L5 19" />
+
+</svg>
         </a>
       </div>
     </div>

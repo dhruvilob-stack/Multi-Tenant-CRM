@@ -72,7 +72,7 @@ class CrmGlobalSearchProvider implements GlobalSearchProvider
         /** @var Model $model */
         $model = $resource::getModel()::query()->getModel();
         $table = $model->getTable();
-        $searchableColumns = $this->resolveSearchableColumns($resource, $table);
+        $searchableColumns = $this->resolveSearchableColumns($resource, $table, $model->getConnectionName());
 
         if ($searchableColumns === []) {
             return collect();
@@ -110,7 +110,7 @@ class CrmGlobalSearchProvider implements GlobalSearchProvider
      * @param class-string<Resource> $resource
      * @return array<int, string>
      */
-    protected function resolveSearchableColumns(string $resource, string $table): array
+    protected function resolveSearchableColumns(string $resource, string $table, ?string $connection = null): array
     {
         $resourceColumns = array_values(array_filter(
             $resource::getGloballySearchableAttributes(),
@@ -119,7 +119,7 @@ class CrmGlobalSearchProvider implements GlobalSearchProvider
 
         $fallbackColumns = [];
 
-        foreach ($this->getTableColumns($table) as $column) {
+        foreach ($this->getTableColumns($table, $connection) as $column) {
             if (in_array($column, ['id', 'created_at', 'updated_at', 'deleted_at', 'remember_token', 'password'], true)) {
                 continue;
             }
@@ -133,7 +133,7 @@ class CrmGlobalSearchProvider implements GlobalSearchProvider
 
         $combined = array_values(array_unique(array_merge($resourceColumns, $fallbackColumns)));
 
-        return $this->onlyExistingColumns($table, $combined);
+        return $this->onlyExistingColumns($table, $combined, $connection);
     }
 
     /**
@@ -150,7 +150,7 @@ class CrmGlobalSearchProvider implements GlobalSearchProvider
             // fallback
         }
 
-        foreach ($this->getTableColumns($record->getTable()) as $column) {
+        foreach ($this->getTableColumns($record->getTable(), $record->getConnectionName()) as $column) {
             if (preg_match('/(name|title|email|sku|code|number|reference|subject)$/', $column) !== 1) {
                 continue;
             }
@@ -170,7 +170,7 @@ class CrmGlobalSearchProvider implements GlobalSearchProvider
     protected function buildDefaultDetails(Model $record): array
     {
         $details = [];
-        $tableColumns = $this->getTableColumns($record->getTable());
+        $tableColumns = $this->getTableColumns($record->getTable(), $record->getConnectionName());
 
         foreach (['status', 'role', 'email', 'created_at'] as $column) {
             if (! in_array($column, $tableColumns, true)) {
@@ -265,22 +265,29 @@ class CrmGlobalSearchProvider implements GlobalSearchProvider
     /**
      * @return array<int, string>
      */
-    protected function getTableColumns(string $table): array
+    protected function getTableColumns(string $table, ?string $connection = null): array
     {
-        if (! isset($this->tableColumns[$table])) {
-            $this->tableColumns[$table] = Schema::getColumnListing($table);
+        $key = ($connection ?: 'default') . ':' . $table;
+
+        if (! isset($this->tableColumns[$key])) {
+            try {
+                $schema = Schema::connection($connection);
+                $this->tableColumns[$key] = $schema->getColumnListing($table);
+            } catch (\Throwable) {
+                $this->tableColumns[$key] = [];
+            }
         }
 
-        return $this->tableColumns[$table];
+        return $this->tableColumns[$key];
     }
 
     /**
      * @param array<int, string> $requested
      * @return array<int, string>
      */
-    protected function onlyExistingColumns(string $table, array $requested): array
+    protected function onlyExistingColumns(string $table, array $requested, ?string $connection = null): array
     {
-        $available = array_flip($this->getTableColumns($table));
+        $available = array_flip($this->getTableColumns($table, $connection));
 
         return array_values(array_filter($requested, fn (string $column): bool => isset($available[$column])));
     }

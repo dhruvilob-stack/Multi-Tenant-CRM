@@ -8,6 +8,7 @@ use App\Models\OrganizationSubscription;
 use App\Models\OrganizationSubscriptionInvoice;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Support\SystemSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -57,12 +58,24 @@ class SubscriptionService
         $settings = app(PlanCatalogService::class)->settings();
         $taxRate = (float) ($settings['tax_rate'] ?? 0);
         $platformFee = (float) ($settings['platform_fee'] ?? 0);
-        $currency = $currencyOverride !== null && $currencyOverride !== ''
-            ? $currencyOverride
-            : (string) ($settings['currency'] ?? 'USD');
+        $baseCurrency = strtoupper((string) ($settings['currency'] ?? 'USD'));
+        $currency = strtoupper(trim((string) ($currencyOverride ?? ''))) ?: $baseCurrency;
 
-        $planPrice = (float) ($plan['price'] ?? 0);
-        $taxAmount = round($planPrice * $taxRate, 2);
+        $rates = SystemSettings::currencyRatesPerUsd();
+        $inrOverride = (float) config('payments.usd_to_inr_rate', $rates['INR'] ?? 1.0);
+        if ($inrOverride > 0) {
+            $rates['INR'] = $inrOverride;
+        }
+        $baseRate = (float) ($rates[$baseCurrency] ?? 1.0);
+        $targetRate = (float) ($rates[$currency] ?? 1.0);
+        $rate = $baseRate > 0 ? ($targetRate / $baseRate) : 1.0;
+
+        $planPriceBase = (float) ($plan['price'] ?? 0);
+        $taxAmountBase = round($planPriceBase * $taxRate, 4);
+
+        $planPrice = round($planPriceBase * $rate, 2);
+        $taxAmount = round($taxAmountBase * $rate, 2);
+        $platformFee = round($platformFee * $rate, 2);
         $total = round($planPrice + $taxAmount + $platformFee, 2);
 
         $billingCycle = (string) ($plan['billing_cycle'] ?? 'month');

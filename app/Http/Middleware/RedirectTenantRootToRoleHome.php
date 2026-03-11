@@ -12,11 +12,16 @@ class RedirectTenantRootToRoleHome
 {
     public function handle(Request $request, Closure $next): Response|RedirectResponse
     {
+
         if ((bool) $request->attributes->get('role_dashboard_alias', false) === true) {
             return $next($request);
         }
 
         if ((string) $request->query('role_dashboard_alias', '') === '1') {
+            return $next($request);
+        }
+
+        if ((bool) $request->attributes->get('role_alias_forward', false) === true) {
             return $next($request);
         }
 

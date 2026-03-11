@@ -5,7 +5,6 @@
     <title>Subscription Invoice</title>
 </head>
 <body style="font-family: Arial, Helvetica, sans-serif; color: #111827;">
-    @php($displayCurrency = in_array($invoice->payment_method, ['razorpay', 'phonepe'], true) ? 'INR' : $invoice->currency)
 
     <p>Hello {{ e($organization?->name ?: 'there') }},</p>
 
@@ -26,7 +25,7 @@
         </tr>
         <tr>
             <td style="border: 1px solid #e5e7eb;">Total</td>
-            <td style="border: 1px solid #e5e7eb;">{{ number_format((float) $invoice->total_amount, 2) }} {{ $displayCurrency }}</td>
+            <td style="border: 1px solid #e5e7eb;">{{ number_format((float) $invoice->total_amount, 2) }} {{ $invoice->currency }}</td>
         </tr>
         <tr>
             <td style="border: 1px solid #e5e7eb;">Payment Method</td>

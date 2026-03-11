@@ -18,8 +18,6 @@
     </style>
 </head>
 <body>
-    @php($displayCurrency = in_array($invoice->payment_method, ['razorpay', 'phonepe'], true) ? 'INR' : $invoice->currency)
-
     <table style="margin-bottom: 24px;">
         <tr>
             <td>
@@ -56,19 +54,19 @@
             <tbody>
                 <tr>
                     <td>Plan price</td>
-                    <td style="text-align: right;">{{ number_format((float) $invoice->plan_price, 2) }} {{ $displayCurrency }}</td>
+                    <td style="text-align: right;">{{ number_format((float) $invoice->plan_price, 2) }} {{ $invoice->currency }}</td>
                 </tr>
                 <tr>
                     <td>GST / Tax</td>
-                    <td style="text-align: right;">{{ number_format((float) $invoice->tax_amount, 2) }} {{ $displayCurrency }}</td>
+                    <td style="text-align: right;">{{ number_format((float) $invoice->tax_amount, 2) }} {{ $invoice->currency }}</td>
                 </tr>
                 <tr>
                     <td>Platform fee</td>
-                    <td style="text-align: right;">{{ number_format((float) $invoice->platform_fee, 2) }} {{ $displayCurrency }}</td>
+                    <td style="text-align: right;">{{ number_format((float) $invoice->platform_fee, 2) }} {{ $invoice->currency }}</td>
                 </tr>
                 <tr class="totals">
                     <td>Total</td>
-                    <td style="text-align: right;">{{ number_format((float) $invoice->total_amount, 2) }} {{ $displayCurrency }}</td>
+                    <td style="text-align: right;">{{ number_format((float) $invoice->total_amount, 2) }} {{ $invoice->currency }}</td>
                 </tr>
             </tbody>
         </table>

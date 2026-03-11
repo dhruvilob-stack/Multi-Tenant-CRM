@@ -17,4 +17,12 @@ return [
         'salt_index' => env('PHONEPE_SALT_INDEX'),
         'env' => env('PHONEPE_ENV', 'sandbox'),
     ],
+
+    /*
+     * When we force INR for Razorpay/PhonePe we assume the original plan
+     * pricing was listed in USD.  Rather than hard-code a rate throughout the
+     * codebase we store a simple conversion factor here; it can be overridden
+     * in env for testing or production adjustments.
+     */
+    'usd_to_inr_rate' => env('USD_TO_INR_RATE', 83.0),
 ];

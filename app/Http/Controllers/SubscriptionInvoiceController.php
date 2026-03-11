@@ -55,10 +55,6 @@ class SubscriptionInvoiceController extends Controller
             abort(403);
         }
 
-        if (in_array($record->payment_method, ['razorpay', 'phonepe'], true) && $record->currency !== 'INR') {
-            $record->update(['currency' => 'INR']);
-        }
-
         $generated = app(SubscriptionInvoicePdfService::class)->generate($record);
         if (isset($generated['path'])) {
             $record->update(['pdf_path' => $generated['path']]);

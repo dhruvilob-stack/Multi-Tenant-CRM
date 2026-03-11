@@ -86,6 +86,7 @@ class SubscriptionRazorpayController extends Controller
                 ->with('error', 'Payment session expired. Please try again.');
         }
 
+        $currency = strtoupper((string) ($payload['currency'] ?? 'INR'));
         app(SubscriptionService::class)->activate(
             $user,
             (string) $payload['plan_key'],
@@ -96,7 +97,7 @@ class SubscriptionRazorpayController extends Controller
                 'razorpay_order_id' => $orderId,
                 'razorpay_signature' => $signature,
             ],
-            'INR',
+            $currency,
         );
 
         session()->forget($this->sessionKey($user));

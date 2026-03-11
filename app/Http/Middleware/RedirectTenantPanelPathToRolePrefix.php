@@ -36,6 +36,14 @@ class RedirectTenantPanelPathToRolePrefix
             return $next($request);
         }
 
+        // bypass any redirection while we are landing from an impersonation
+        // flow; the controller appends this query string and the first request
+        // should be treated as ordinary.
+        if ($request->query('impersonated') === '1') {
+            return $next($request);
+        }
+
+
         // Requests internally forwarded from role-prefixed aliases
         // should not be redirected back again.
         if ((bool) $request->attributes->get('role_alias_forward', false) === true) {
@@ -122,16 +130,11 @@ class RedirectTenantPanelPathToRolePrefix
             return redirect($target);
         }
 
+        // if the path already begins with a role name we don't rewrite it –
+        // leaving the prefix in place is appropriate for both the user and the
+        // rewrite middleware (which will skip later). this mirrors the original
+        // behaviour prior to our earlier experiments.
         if (preg_match('#^(manufacturer|distributor|vendor|consumer)(/|$)#', $relative) === 1) {
-            if ($relative === $rolePrefix) {
-                $target = "/{$tenant}?role_dashboard_alias=1";
-                if ($request->getQueryString()) {
-                    $target .= '&'.$request->getQueryString();
-                }
-
-                return redirect($target);
-            }
-
             return $next($request);
         }
 
