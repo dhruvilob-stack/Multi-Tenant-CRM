@@ -31,22 +31,22 @@ class InvoiceResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor', 'consumer'], true);
+        return in_array(auth('tenant')->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor', 'consumer'], true);
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor', 'consumer'], true);
+        return in_array(auth('tenant')->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor', 'consumer'], true);
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::VENDOR], true);
+        return in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::VENDOR], true);
     }
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
         if (AccessMatrix::isSuper($user) || $user?->role === UserRole::ORG_ADMIN) {
             return true;
         }
@@ -57,7 +57,7 @@ class InvoiceResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = auth('tenant')->user();
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;
         }

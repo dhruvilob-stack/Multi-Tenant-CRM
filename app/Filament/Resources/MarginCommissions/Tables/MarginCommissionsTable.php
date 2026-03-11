@@ -39,12 +39,12 @@ class MarginCommissionsTable
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make()
-                    ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
+                    ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
+                        ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN),
                 ]),
             ]);
     }

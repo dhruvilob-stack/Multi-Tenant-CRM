@@ -39,22 +39,28 @@ class OrderResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor', 'consumer'], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor', 'consumer'], true);
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor', 'consumer'], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor', 'consumer'], true);
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::VENDOR, UserRole::CONSUMER], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::VENDOR, UserRole::CONSUMER], true);
     }
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (AccessMatrix::isSuper($user) || $user?->role === UserRole::ORG_ADMIN) {
             return true;
@@ -111,7 +117,7 @@ class OrderResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (!$user || AccessMatrix::isSuper($user)) {
             return $query;

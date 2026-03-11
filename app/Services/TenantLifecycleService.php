@@ -19,7 +19,9 @@ class TenantLifecycleService
 
         if ($tenant) {
             $backupPath = $this->exportTenantDatabase($tenant);
-            $this->emailBackup($tenant, $backupPath);
+            if ($backupPath !== '') {
+                $this->emailBackup($tenant, $backupPath);
+            }
             $this->dropTenantDatabase($tenant);
         }
 
@@ -33,7 +35,7 @@ class TenantLifecycleService
             }
 
             if ($deleteOrganization) {
-                $organization->delete();
+                $organization->deleteQuietly();
             }
 
             if ($tenant) {
@@ -130,11 +132,23 @@ class TenantLifecycleService
 
     public function exportTenantDatabase(Tenant $tenant): string
     {
+        $dbName = (string) $tenant->database;
+        if ($dbName === '') {
+            return '';
+        }
+
+        $landlordConnection = config('tenancy.landlord_connection', 'landlord');
+        $exists = DB::connection($landlordConnection)->selectOne(
+            'SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?',
+            [$dbName]
+        );
+        if (! $exists) {
+            return '';
+        }
+
         app(TenantDatabaseManager::class)->activateTenantConnection($tenant);
         $tenantConnection = config('tenancy.tenant_connection', 'tenant');
         $connection = DB::connection($tenantConnection);
-
-        $dbName = (string) $tenant->database;
         $tables = $connection->select('SHOW TABLES');
         $backup = [];
         $backup[] = '-- Tenant Backup';

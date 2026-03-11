@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Models\BaseModel;
+use App\Models\OrganizationSubscription;
 use App\Services\TenantSyncService;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Organization extends BaseModel
 {
@@ -65,5 +67,15 @@ class Organization extends BaseModel
     public function invitations(): HasMany
     {
         return $this->hasMany(Invitation::class);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(OrganizationSubscription::class);
+    }
+
+    public function latestSubscription(): HasOne
+    {
+        return $this->hasOne(OrganizationSubscription::class)->latestOfMany();
     }
 }

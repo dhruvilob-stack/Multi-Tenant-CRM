@@ -121,7 +121,7 @@ class CommentsRelationManager extends RelationManager
                 CreateAction::make()
                     ->after(function ($record): void {
                         /** @var User|null $user */
-                        $user = auth()->user();
+                        $user = auth('tenant')->user();
 
                         if (! $user) {
                             return;

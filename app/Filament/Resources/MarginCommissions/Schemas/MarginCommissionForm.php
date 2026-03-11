@@ -19,7 +19,7 @@ class MarginCommissionForm
         return $schema
             ->components([
                 Hidden::make('organization_id')
-                    ->default(fn () => auth()->user()?->organization_id),
+                    ->default(fn () => auth('tenant')->user()?->organization_id),
                 Hidden::make('category_id')
                     ->default(null),
                 Select::make('rule_type')
@@ -39,7 +39,7 @@ class MarginCommissionForm
                     }),
                 Select::make('product_id')
                     ->options(function (): array {
-                        $user = auth()->user();
+                        $user = auth('tenant')->user();
                         $query = Product::query()->with('manufacturer:id,organization_id');
 
                         if ($user?->role !== UserRole::SUPER_ADMIN) {

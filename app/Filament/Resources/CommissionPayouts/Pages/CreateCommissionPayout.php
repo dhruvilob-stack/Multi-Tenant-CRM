@@ -18,7 +18,7 @@ class CreateCommissionPayout extends CreateRecord
     {
         try {
             /** @var CommissionPayout $payout */
-            $payout = app(CommissionPayoutService::class)->create($data, auth()->user());
+            $payout = app(CommissionPayoutService::class)->create($data, auth('tenant')->user());
         } catch (ValidationException $e) {
             Notification::make()
                 ->danger()

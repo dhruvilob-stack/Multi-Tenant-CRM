@@ -46,7 +46,7 @@ class TenantResource extends Resource
     {
         app(TenantSyncService::class)->backfillMissing();
 
-        return parent::getEloquentQuery();
+        return parent::getEloquentQuery()->with('latestSubscription');
     }
 
     public static function getRelations(): array
@@ -66,7 +66,6 @@ class TenantResource extends Resource
         ];
     }
 }
-
 
 
 

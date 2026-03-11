@@ -216,7 +216,7 @@ class QuotationsTable
 
     private static function canEditQuotation(Quotation $record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;
@@ -233,7 +233,7 @@ class QuotationsTable
 
     private static function canSendQuotation(Quotation $record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;
@@ -250,7 +250,7 @@ class QuotationsTable
 
     private static function canCounterOffer(Quotation $record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;
@@ -267,7 +267,7 @@ class QuotationsTable
 
     private static function canNegotiateQuotation(Quotation $record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;
@@ -284,7 +284,7 @@ class QuotationsTable
 
     private static function canConfirmQuotation(Quotation $record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;
@@ -301,7 +301,7 @@ class QuotationsTable
 
     private static function canRejectQuotation(Quotation $record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;
@@ -318,7 +318,7 @@ class QuotationsTable
 
     private static function canCancelQuotation(Quotation $record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;

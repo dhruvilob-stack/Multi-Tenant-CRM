@@ -2,6 +2,7 @@
 
 namespace App\Filament\SuperAdmin\Resources\Users\Tables;
 
+use App\Services\TenantUserDeletionService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -33,7 +34,10 @@ class UsersTable
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->action(function ($records): void {
+                            app(TenantUserDeletionService::class)->deleteMany($records);
+                        }),
                 ]),
             ]);
     }

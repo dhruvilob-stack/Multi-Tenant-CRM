@@ -27,6 +27,13 @@ class TenantsTable
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('email'),
                 TextColumn::make('status')->badge(),
+                TextColumn::make('latestSubscription.plan_name')
+                    ->label('Plan')
+                    ->placeholder('-'),
+                TextColumn::make('latestSubscription.status')
+                    ->label('Subscription')
+                    ->badge()
+                    ->placeholder('-'),
                 TextColumn::make('direct_users_count')
                     ->counts('directUsers')
                     ->label('Users'),

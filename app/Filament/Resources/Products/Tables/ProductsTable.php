@@ -78,7 +78,7 @@ class ProductsTable
                 Action::make('request_change')
                     ->label('Request Change')
                     ->icon('heroicon-o-pencil-square')
-                    ->visible(fn (): bool => auth()->user()?->role === UserRole::MANUFACTURER)
+                    ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::MANUFACTURER)
                     ->form([
                         Textarea::make('requested_changes')
                             ->required()
@@ -87,8 +87,8 @@ class ProductsTable
                     ->action(function (Product $record, array $data): void {
                         ProductChangeRequest::query()->create([
                             'product_id' => $record->id,
-                            'manufacturer_id' => auth()->id(),
-                            'organization_id' => auth()->user()->organization_id,
+                            'manufacturer_id' => auth('tenant')->id(),
+                            'organization_id' => auth('tenant')->user()->organization_id,
                             'requested_changes' => $data['requested_changes'],
                             'status' => 'pending',
                         ]);
@@ -98,7 +98,7 @@ class ProductsTable
             ])
             ->groupedBulkActions([
                 DeleteBulkAction::make()
-                    ->visible(fn (): bool => in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
+                    ->visible(fn (): bool => in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
             ])
             ->toolbarActions([
                 ...ResourceDataExchange::toolbarActions('products'),

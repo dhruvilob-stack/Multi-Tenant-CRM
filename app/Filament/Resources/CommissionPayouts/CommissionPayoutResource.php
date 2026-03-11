@@ -31,7 +31,7 @@ class CommissionPayoutResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, [
+        return in_array(auth('tenant')->user()?->role, [
             UserRole::ORG_ADMIN,
             UserRole::MANUFACTURER,
             UserRole::DISTRIBUTOR,
@@ -46,23 +46,23 @@ class CommissionPayoutResource extends Resource
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->role === UserRole::ORG_ADMIN;
+        return auth('tenant')->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canEdit($record): bool
     {
-        return auth()->user()?->role === UserRole::ORG_ADMIN;
+        return auth('tenant')->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canDelete($record): bool
     {
-        return auth()->user()?->role === UserRole::ORG_ADMIN;
+        return auth('tenant')->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = auth('tenant')->user();
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;
         }

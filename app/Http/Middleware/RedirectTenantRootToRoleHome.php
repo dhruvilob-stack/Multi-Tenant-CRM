@@ -16,6 +16,10 @@ class RedirectTenantRootToRoleHome
             return $next($request);
         }
 
+        if ((string) $request->query('role_dashboard_alias', '') === '1') {
+            return $next($request);
+        }
+
         if ((bool) $request->attributes->get('role_prefixed_rewrite', false) === true) {
             return $next($request);
         }

@@ -30,17 +30,17 @@ class ProductChangeRequestResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
+        return in_array(auth('tenant')->user()?->role, [UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
+        return in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->role === UserRole::MANUFACTURER;
+        return auth('tenant')->user()?->role === UserRole::MANUFACTURER;
     }
 
     public static function canDelete($record): bool
@@ -50,13 +50,13 @@ class ProductChangeRequestResource extends Resource
 
     public static function canEdit($record): bool
     {
-        return auth()->user()?->role === UserRole::ORG_ADMIN || AccessMatrix::isSuper(auth()->user());
+        return auth('tenant')->user()?->role === UserRole::ORG_ADMIN || AccessMatrix::isSuper(auth('tenant')->user());
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;

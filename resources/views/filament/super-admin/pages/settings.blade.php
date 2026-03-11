@@ -1,10 +1,10 @@
 <x-filament-panels::page>
     <form wire:submit="save" class="space-y-6">
-        <x-filament::section :heading="__('filament.super_admin.pages.settings.heading')">
+        {{-- <x-filament::section :heading="__('filament.super_admin.pages.settings.heading')">
             <p class="text-sm text-gray-600 dark:text-gray-400">
                 {{ __('filament.super_admin.pages.settings.description') }}
             </p>
-        </x-filament::section>
+        </x-filament::section> --}}
 
         <x-filament::section>
             {{ $this->form }}

@@ -26,4 +26,9 @@ trait StoresPanelLoginPrefillPassword
 
         PanelLoginPrefillStore::saveForUser($user, $this->panelPrefillPassword);
     }
+
+    protected function getPanelPrefillPassword(): ?string
+    {
+        return $this->panelPrefillPassword;
+    }
 }

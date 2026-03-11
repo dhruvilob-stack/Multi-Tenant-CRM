@@ -12,7 +12,7 @@ class CreateCategory extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if ($user && ! AccessMatrix::isSuper($user)) {
             $data['organization_id'] = $user->organization_id;

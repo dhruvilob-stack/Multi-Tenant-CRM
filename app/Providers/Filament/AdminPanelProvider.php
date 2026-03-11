@@ -13,7 +13,7 @@ use App\Support\CrmGlobalSearchProvider;
 use App\Support\NavigationPreferenceManager;
 use CharrafiMed\GlobalSearchModal\GlobalSearchModalPlugin;
 use CharrafiMed\GlobalSearchModal\GlobalSearchResults as ModalGlobalSearchResults;
-use Filament\Http\Middleware\Authenticate;
+use App\Http\Middleware\FilamentTenantAuthenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationBuilder;
@@ -35,6 +35,7 @@ class AdminPanelProvider extends PanelProvider
     {
         return $panel
             ->id('admin')
+            ->default()
             ->path('{tenant}')
             ->login()
             ->spa(true, true)
@@ -64,6 +65,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::BODY_END, fn() => view('filament.components.mail-composer-popup'))
             ->renderHook(PanelsRenderHook::BODY_END, fn() => view('filament.components.mail-viewer-popup'))
             ->renderHook(PanelsRenderHook::BODY_END, fn() => view('filament.components.record-highlight'))
+            ->renderHook(PanelsRenderHook::BODY_END, fn() => view('filament.components.subscription-onboarding'))
             ->renderHook(PanelsRenderHook::TOPBAR_START, fn() => view('filament.components.topbar-role-label'))
             ->renderHook(PanelsRenderHook::STYLES_AFTER, fn() => view('filament.components.notification-topbar-theme'))
             ->renderHook(PanelsRenderHook::STYLES_AFTER, fn() => view('filament.components.global-search-responsive'))
@@ -96,7 +98,7 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
-                Authenticate::class,
+                FilamentTenantAuthenticate::class,
                 ApplyUserLocale::class,
                 RedirectTenantRootToRoleHome::class,
                 RedirectTenantPanelPathToRolePrefix::class,

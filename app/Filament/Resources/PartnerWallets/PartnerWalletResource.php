@@ -28,7 +28,7 @@ class PartnerWalletResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, [
+        return in_array(auth('tenant')->user()?->role, [
             UserRole::SUPER_ADMIN,
             UserRole::ORG_ADMIN,
             UserRole::MANUFACTURER,
@@ -60,7 +60,7 @@ class PartnerWalletResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with('user:id,name,role,organization_id');
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;

@@ -14,10 +14,10 @@ class CreateInvitation extends CreateRecord
     protected function handleRecordCreation(array $data): Invitation
     {
         return app(InvitationService::class)->sendInvitation(
-            inviterId: (int) auth()->id(),
+            inviterId: (int) auth('tenant')->id(),
             inviteeEmail: (string) $data['invitee_email'],
             role: (string) $data['role'],
-            organizationId: (int) auth()->user()->organization_id,
+            organizationId: (int) auth('tenant')->user()->organization_id,
             ttlHours: 72,
         );
     }

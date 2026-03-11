@@ -27,7 +27,7 @@ class EditCategory extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if ($user && ! AccessMatrix::isSuper($user) && empty($this->record->organization_id)) {
             $data['organization_id'] = $user->organization_id;

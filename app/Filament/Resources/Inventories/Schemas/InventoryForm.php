@@ -15,7 +15,7 @@ class InventoryForm
 {
     public static function configure(Schema $schema): Schema
     {
-        $authUser = auth()->user();
+        $authUser = auth('tenant')->user();
 
         return $schema
             ->components([

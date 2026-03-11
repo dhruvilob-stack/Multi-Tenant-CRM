@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 class ConsumerResource extends Resource
 {
     protected static ?string $model = User::class;
-    protected static ?string $slug = 'consumer';
+    protected static ?string $slug = 'consumers';
     protected static ?string $navigationLabel = 'Consumers';
     protected static ?string $modelLabel = 'Consumer';
     protected static string|\UnitEnum|null $navigationGroup = 'Structure';
@@ -30,22 +30,28 @@ class ConsumerResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::VENDOR], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::VENDOR], true);
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::DISTRIBUTOR, UserRole::VENDOR, UserRole::CONSUMER], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::DISTRIBUTOR, UserRole::VENDOR, UserRole::CONSUMER], true);
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::VENDOR], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::VENDOR], true);
     }
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
         if (AccessMatrix::isSuper($user) || AccessMatrix::isOrgAdmin($user)) {
             return true;
         }
@@ -58,13 +64,15 @@ class ConsumerResource extends Resource
 
     public static function canDelete($record): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->where('role', UserRole::CONSUMER);
-        $user = auth()->user();
+        $user = auth('tenant')->user();
         if (! $user) {
             return $query->whereRaw('1=0');
         }
@@ -112,5 +120,3 @@ class ConsumerResource extends Resource
         ];
     }
 }
-
-

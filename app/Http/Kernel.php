@@ -13,6 +13,13 @@ use Illuminate\Foundation\Http\Kernel as HttpKernel;
 
 class Kernel extends HttpKernel
 {
+    protected $middlewarePriority = [
+        \Illuminate\Session\Middleware\StartSession::class,
+        \App\Http\Middleware\InitializeTenancy::class,
+        \App\Http\Middleware\SetTenantUrlDefaults::class,
+        \Illuminate\Auth\Middleware\Authenticate::class,
+    ];
+
     protected $middleware = [
         TrustHosts::class,
         TrustProxies::class,

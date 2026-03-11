@@ -18,7 +18,7 @@ class QuotationForm
 {
     public static function configure(Schema $schema): Schema
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
         $system = SystemSettings::forOrganization($user?->organization);
         $defaultTaxPercent = (float) ($system['default_tax_percent'] ?? 0);
         $defaultDiscountPercent = (float) ($system['default_discount_percent'] ?? 0);

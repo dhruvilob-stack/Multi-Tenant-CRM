@@ -22,19 +22,19 @@ class InvitationForm
                     ->icon('heroicon-o-envelope')
                     ->schema([
                         Hidden::make('inviter_id')
-                            ->default(fn() => auth()->id()),
+                            ->default(fn() => auth('tenant')->id()),
                         Hidden::make('organization_id')
-                            ->default(fn() => auth()->user()?->organization_id),
+                            ->default(fn() => auth('tenant')->user()?->organization_id),
                         Grid::make(2)->schema([
                             Placeholder::make('organization_name')
                                 ->label('Organization')
-                                ->content(fn() => auth()->user()?->organization?->name ?? 'N/A'),
+                                ->content(fn() => auth('tenant')->user()?->organization?->name ?? 'N/A'),
                             Placeholder::make('inviter_name')
                                 ->label('Inviter')
                                 ->content(fn() => sprintf(
                                     '%s (%s)',
-                                    auth()->user()?->name ?? 'N/A',
-                                    auth()->user()?->email ?? 'N/A'
+                                    auth('tenant')->user()?->name ?? 'N/A',
+                                    auth('tenant')->user()?->email ?? 'N/A'
                                 )),
                         ]),
                         TextInput::make('invitee_email')
@@ -46,7 +46,7 @@ class InvitationForm
                             ->helperText('A join link will be sent to this exact email address.'),
                         Select::make('role')
                             ->label('Invite as Role')
-                            ->options(fn() => AccessMatrix::allowedInviteRoles(auth()->user()))
+                            ->options(fn() => AccessMatrix::allowedInviteRoles(auth('tenant')->user()))
                             ->required()
                             ->native(false)
                             ->helperText('Only allowed downward roles are listed.'),

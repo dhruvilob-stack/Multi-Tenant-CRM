@@ -29,7 +29,7 @@ class OrderForm
 {
     private static function calculateLineTotal(float $qty, float $unitPrice, float $discountPercent): float
     {
-        $system = SystemSettings::forOrganization(auth()->user()?->organization);
+        $system = SystemSettings::forOrganization(auth('tenant')->user()?->organization);
         $safeQty = max($qty, 0);
         $safeUnitPrice = max($unitPrice, 0);
         $safeDiscount = max(0, min(100, $discountPercent));

@@ -8,15 +8,18 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Order;
 use App\Models\Organization;
+use App\Models\PlatformSetting;
 use App\Observers\OrganizationObserver;
 use App\Models\Product;
 use App\Observers\InvoiceItemObserver;
 use App\Observers\InvoiceObserver;
 use App\Observers\OrderObserver;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +39,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $defaultTimezone = config('app.timezone', 'UTC');
+        $platformTimezone = $defaultTimezone;
+
+        try {
+            $platformTimezone = Cache::remember('platform.timezone', 300, function () use ($defaultTimezone) {
+                $record = PlatformSetting::query()->first();
+                $settings = (array) ($record?->settings ?? []);
+
+                return $settings['timezone'] ?? $defaultTimezone;
+            });
+        } catch (Throwable $e) {
+            $platformTimezone = $defaultTimezone;
+        }
+
+        if (is_string($platformTimezone) && $platformTimezone !== '') {
+            config(['app.timezone' => $platformTimezone]);
+            date_default_timezone_set($platformTimezone);
+        }
+
         Route::pattern(
             'tenant',
             '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|up$|filament$|livewire.*$)[A-Za-z0-9][A-Za-z0-9\-]*$'

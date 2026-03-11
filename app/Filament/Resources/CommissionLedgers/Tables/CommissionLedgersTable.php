@@ -39,11 +39,11 @@ class CommissionLedgersTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make()
-                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
+                        ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN),
                     Action::make('updateStatus')
                         ->label('Update Status')
                         ->icon('heroicon-o-check-badge')
-                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN)
+                        ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN)
                         ->form([
                             Select::make('status')
                                 ->options([
@@ -81,7 +81,7 @@ class CommissionLedgersTable
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
+                        ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN),
                 ]),
             ]);
     }

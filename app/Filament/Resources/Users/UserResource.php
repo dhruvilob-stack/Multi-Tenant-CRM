@@ -29,18 +29,18 @@ class UserResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->role === 'org_admin';
+        return auth('tenant')->user()?->role === 'org_admin';
     }
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->role === 'org_admin';
+        return auth('tenant')->user()?->role === 'org_admin';
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;

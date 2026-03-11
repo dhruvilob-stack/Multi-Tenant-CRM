@@ -13,6 +13,7 @@ class UserInfolist
             ->components([
                 TextEntry::make('name'),
                 TextEntry::make('email'),
+                TextEntry::make('contact_email')->label('Actual Gmail'),
                 TextEntry::make('role'),
                 TextEntry::make('customRole.name')->label('Custom Role'),
                 TextEntry::make('organization.name')->label('Organization'),

@@ -32,33 +32,33 @@ class InventoryResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor'], true);
+        return in_array(auth('tenant')->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor'], true);
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor'], true);
+        return in_array(auth('tenant')->user()?->role, ['org_admin', 'manufacturer', 'distributor', 'vendor'], true);
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
+        return in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
     }
 
     public static function canEdit($record): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR], true);
+        return in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR], true);
     }
 
     public static function canDelete($record): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
+        return in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;

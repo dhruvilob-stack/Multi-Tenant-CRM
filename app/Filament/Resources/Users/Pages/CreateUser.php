@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\Pages;
 use App\Filament\Resources\Users\Concerns\StoresPanelLoginPrefillPassword;
 use App\Models\User;
 use App\Filament\Resources\Users\UserResource;
+use App\Services\UserAccessMailService;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateUser extends CreateRecord
@@ -24,6 +25,10 @@ class CreateUser extends CreateRecord
     {
         if ($this->record instanceof User) {
             $this->savePanelPrefillPassword($this->record);
+            $password = $this->getPanelPrefillPassword();
+            if ($password) {
+                app(UserAccessMailService::class)->sendForUser($this->record, $password);
+            }
         }
     }
 }

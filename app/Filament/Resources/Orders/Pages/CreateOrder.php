@@ -50,7 +50,7 @@ class CreateOrder extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
         $data = OrderForm::normalizeItemsAndTotals($data);
 
         $data['status'] = 'new';
@@ -73,7 +73,7 @@ class CreateOrder extends CreateRecord
         /** @var Order|null $order */
         $order = $this->record;
         /** @var User|null $user */
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $order || ! $user) {
             return;

@@ -16,6 +16,7 @@ use Filament\Pages\Page;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use DateTimeZone;
 
 class Settings extends Page implements HasForms
 {
@@ -73,8 +74,11 @@ class Settings extends Page implements HasForms
                                 'AED' => 'UAE Dirham (AED)',
                             ])
                             ->required(),
-                        TextInput::make('timezone')
+                        Select::make('timezone')
                             ->label('Timezone')
+                            ->options($this->timezoneOptions())
+                            ->searchable()
+                            ->preload()
                             ->required(),
                     ])
                     ->columns(2),
@@ -122,6 +126,21 @@ class Settings extends Page implements HasForms
             ->success()
             ->title('Global settings saved')
             ->send();
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function timezoneOptions(): array
+    {
+        $zones = DateTimeZone::listIdentifiers();
+        $options = [];
+
+        foreach ($zones as $zone) {
+            $options[$zone] = $zone;
+        }
+
+        return $options;
     }
 
     // protected function getHeaderWidgets(): array

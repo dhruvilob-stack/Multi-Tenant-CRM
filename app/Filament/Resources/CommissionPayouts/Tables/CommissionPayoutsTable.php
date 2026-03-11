@@ -74,11 +74,11 @@ class CommissionPayoutsTable
                 ActionGroup::make([
                     ViewAction::make(),
                     EditAction::make()
-                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
+                        ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN),
                     Action::make('markCompleted')
                         ->label('Mark Completed')
                         ->icon('heroicon-o-check-circle')
-                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN)
+                        ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN)
                         ->hidden(fn (CommissionPayout $record): bool => (string) $record->status === 'completed')
                         ->requiresConfirmation()
                         ->action(function (CommissionPayout $record): void {
@@ -90,7 +90,7 @@ class CommissionPayoutsTable
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
+                        ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN),
                 ]),
             ]);
     }

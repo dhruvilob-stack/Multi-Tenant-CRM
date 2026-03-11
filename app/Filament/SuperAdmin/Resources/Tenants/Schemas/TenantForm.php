@@ -19,7 +19,12 @@ class TenantForm
                     ->required()
                     ->maxLength(255),
                 TextInput::make('email')
-                    ->label('Organization Email')
+                    ->label('Organization Email (Login)')
+                    ->email()
+                    ->required()
+                    ->maxLength(255),
+                TextInput::make('admin_contact_email')
+                    ->label('Organization Admin Gmail')
                     ->email()
                     ->required()
                     ->maxLength(255),
@@ -72,7 +77,7 @@ class TenantForm
                         'inactive' => 'Inactive',
                         'suspended' => 'Suspended',
                     ])
-                    ->default('active')
+                    ->default('inactive')
                     ->required(),
             ])
             ->columns(2);

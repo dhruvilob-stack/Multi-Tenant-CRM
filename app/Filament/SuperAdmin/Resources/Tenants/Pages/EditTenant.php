@@ -24,6 +24,10 @@ class EditTenant extends EditRecord
         $data['domain'] = $this->record->tenant?->domain;
         $data['slug'] = $this->record->tenant?->slug ?: $this->record->slug;
         $data['slug_preview'] = $data['slug'];
+        $data['admin_contact_email'] = User::query()
+            ->where('organization_id', (int) $this->record->id)
+            ->where('role', UserRole::ORG_ADMIN)
+            ->value('contact_email');
 
         return $data;
     }
@@ -55,6 +59,7 @@ class EditTenant extends EditRecord
         $tenantSlug = Str::slug((string) ($data['slug'] ?? ''));
         $tenantDomain = strtolower(trim((string) ($data['domain'] ?? '')));
         $password = (string) ($data['password'] ?? '');
+        $adminContactEmail = (string) ($data['admin_contact_email'] ?? '');
         unset($data['password'], $data['password_confirmation'], $data['slug_preview']);
 
         $record->forceFill([
@@ -63,6 +68,22 @@ class EditTenant extends EditRecord
             'slug' => $tenantSlug !== '' ? $tenantSlug : (string) $record->slug,
             'status' => (string) ($data['status'] ?? $record->status),
         ])->save();
+
+        User::query()
+            ->where('organization_id', (int) $record->id)
+            ->where('role', UserRole::ORG_ADMIN)
+            ->update([
+                'email' => (string) $record->email,
+                'updated_at' => now(),
+            ]);
+
+        User::query()
+            ->where('organization_id', (int) $record->id)
+            ->where('role', UserRole::ORG_ADMIN)
+            ->update([
+                'contact_email' => $adminContactEmail,
+                'updated_at' => now(),
+            ]);
 
         if ($password !== '') {
             $hashedPassword = Hash::make($password);
@@ -91,6 +112,21 @@ class EditTenant extends EditRecord
                 $tenantSlug !== '' ? $tenantSlug : null,
                 $tenantDomain !== '' ? $tenantDomain : null,
             );
+
+            if ($record->tenant) {
+                app(\App\Services\TenantDatabaseManager::class)->activateTenantConnection($record->tenant);
+                $tenantConnection = config('tenancy.tenant_connection', 'tenant');
+                \Illuminate\Support\Facades\DB::connection($tenantConnection)
+                    ->table('users')
+                    ->where('organization_id', (int) $record->id)
+                    ->where('role', UserRole::ORG_ADMIN)
+                    ->update([
+                        'email' => (string) $record->email,
+                        'contact_email' => $adminContactEmail,
+                        'updated_at' => now(),
+                    ]);
+                app(\App\Services\TenantDatabaseManager::class)->activateLandlordConnection();
+            }
         }
 
         return $record;

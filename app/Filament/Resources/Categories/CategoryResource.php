@@ -27,12 +27,12 @@ class CategoryResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer'], true);
+        return in_array(auth('tenant')->user()?->role, ['org_admin', 'manufacturer'], true);
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, ['org_admin', 'manufacturer'], true);
+        return in_array(auth('tenant')->user()?->role, ['org_admin', 'manufacturer'], true);
     }
 
     public static function form(Schema $schema): Schema

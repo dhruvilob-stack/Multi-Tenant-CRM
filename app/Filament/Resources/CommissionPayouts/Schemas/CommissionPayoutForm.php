@@ -47,7 +47,7 @@ class CommissionPayoutForm
                 Select::make('user_id')
                     ->label('Partner')
                     ->options(function (): array {
-                        $user = auth()->user();
+                        $user = auth('tenant')->user();
 
                         $query = User::query()
                             ->whereIn('role', [UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR]);

@@ -35,22 +35,28 @@ class ManufacturerResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
     }
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (AccessMatrix::isSuper($user) || AccessMatrix::isOrgAdmin($user)) {
             return true;
@@ -61,13 +67,15 @@ class ManufacturerResource extends Resource
 
     public static function canDelete($record): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
+        $user = auth('tenant')->user();
+
+        return in_array($user?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->where('role', UserRole::MANUFACTURER);
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return $query->whereRaw('1=0');
@@ -117,4 +125,3 @@ class ManufacturerResource extends Resource
         ];
     }
 }
-

@@ -17,7 +17,7 @@ class EditDistributor extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $this->capturePanelPrefillPassword($data);
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         $data['role'] = UserRole::DISTRIBUTOR;
 

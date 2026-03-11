@@ -14,12 +14,12 @@ class ProductChangeRequestForm
     {
         return $schema
             ->components([
-                Hidden::make('manufacturer_id')->default(fn () => auth()->id()),
-                Hidden::make('organization_id')->default(fn () => auth()->user()?->organization_id),
+                Hidden::make('manufacturer_id')->default(fn () => auth('tenant')->id()),
+                Hidden::make('organization_id')->default(fn () => auth('tenant')->user()?->organization_id),
                 Select::make('product_id')
                     ->options(
                         Product::query()
-                            ->whereHas('manufacturer', fn ($q) => $q->where('organization_id', auth()->user()?->organization_id))
+                            ->whereHas('manufacturer', fn ($q) => $q->where('organization_id', auth('tenant')->user()?->organization_id))
                             ->pluck('name', 'id')
                     )
                     ->searchable()
@@ -29,10 +29,10 @@ class ProductChangeRequestForm
                 Select::make('status')
                     ->options(['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'])
                     ->default('pending')
-                    ->visible(fn () => auth()->user()?->role === 'org_admin'),
+                    ->visible(fn () => auth('tenant')->user()?->role === 'org_admin'),
                 Textarea::make('response_notes')
                     ->columnSpanFull()
-                    ->visible(fn () => auth()->user()?->role === 'org_admin'),
+                    ->visible(fn () => auth('tenant')->user()?->role === 'org_admin'),
             ]);
     }
 }

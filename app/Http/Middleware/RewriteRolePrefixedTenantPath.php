@@ -55,10 +55,9 @@ class RewriteRolePrefixedTenantPath
             return $next($request);
         }
 
-        if (count($segments) === 2) {
-            // Always map /{tenant}/{role} -> /{tenant} at routing layer,
-            // so role-home URLs never 404 due to route collisions/missing routes.
-            return $this->rewritePath($request, '/'.(string) $segments[0], $next);
+        $user = auth('tenant')->user();
+        if ($user && in_array((string) $user->role, [UserRole::ORG_ADMIN, UserRole::SUPER_ADMIN], true)) {
+            return $next($request);
         }
 
         $section = strtolower((string) ($segments[2] ?? ''));

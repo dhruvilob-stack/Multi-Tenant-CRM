@@ -31,22 +31,22 @@ class InvitationResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return AccessMatrix::allowedInviteRoles(auth()->user()) !== [];
+        return AccessMatrix::allowedInviteRoles(auth('tenant')->user()) !== [];
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR], true);
+        return in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR], true);
     }
 
     public static function canCreate(): bool
     {
-        return AccessMatrix::allowedInviteRoles(auth()->user()) !== [];
+        return AccessMatrix::allowedInviteRoles(auth('tenant')->user()) !== [];
     }
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;
@@ -70,7 +70,7 @@ class InvitationResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return $query->whereRaw('1=0');

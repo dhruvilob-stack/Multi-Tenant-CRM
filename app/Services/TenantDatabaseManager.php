@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class TenantDatabaseManager
@@ -12,6 +13,14 @@ class TenantDatabaseManager
     public function activateTenantConnection(Tenant $tenant): void
     {
         $tenantConnection = config('tenancy.tenant_connection', 'tenant');
+
+        if (blank($tenant->database)) {
+            $prefix = (string) config('tenancy.database_prefix', 'tenant_');
+            $slug = (string) ($tenant->slug ?: $tenant->id);
+            $tenant->forceFill([
+                'database' => strtolower($prefix . Str::of($slug)->slug('_')->value()),
+            ])->save();
+        }
 
         if (blank($tenant->database)) {
             throw new InvalidArgumentException("Tenant [{$tenant->id}] does not have a database configured.");

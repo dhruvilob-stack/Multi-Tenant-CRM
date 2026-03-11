@@ -30,33 +30,33 @@ class CommissionLedgerResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return in_array(auth()->user()?->role, ['super_admin', 'org_admin', 'manufacturer', 'distributor', 'vendor'], true);
+        return in_array(auth('tenant')->user()?->role, ['super_admin', 'org_admin', 'manufacturer', 'distributor', 'vendor'], true);
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, ['super_admin', 'org_admin', 'manufacturer', 'distributor', 'vendor'], true);
+        return in_array(auth('tenant')->user()?->role, ['super_admin', 'org_admin', 'manufacturer', 'distributor', 'vendor'], true);
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->role === UserRole::ORG_ADMIN;
+        return auth('tenant')->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canEdit($record): bool
     {
-        return auth()->user()?->role === UserRole::ORG_ADMIN;
+        return auth('tenant')->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function canDelete($record): bool
     {
-        return auth()->user()?->role === UserRole::ORG_ADMIN;
+        return auth('tenant')->user()?->role === UserRole::ORG_ADMIN;
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = auth('tenant')->user();
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;
         }

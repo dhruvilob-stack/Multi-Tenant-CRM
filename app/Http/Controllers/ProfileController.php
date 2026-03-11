@@ -6,6 +6,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Support\TenantUserMirror;
 
 class ProfileController extends Controller
 {
@@ -43,8 +44,8 @@ class ProfileController extends Controller
         }
 
         $user->save();
+        TenantUserMirror::syncToLandlord($user);
 
         return redirect()->back()->with('status', 'Profile updated successfully.');
     }
 }
-

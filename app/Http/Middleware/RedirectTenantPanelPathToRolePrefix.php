@@ -64,6 +64,34 @@ class RedirectTenantPanelPathToRolePrefix
         };
 
         if ($rolePrefix === null) {
+            $singularToPlural = [
+                'manufacturer' => 'manufacturers',
+                'distributor' => 'distributors',
+                'vendor' => 'vendors',
+                'consumer' => 'consumers',
+            ];
+
+            $relative = trim((string) $request->path(), '/');
+            $tenant = (string) ($request->route('tenant') ?? $request->session()->get('tenant_slug') ?? '');
+            $tenantPrefix = trim($tenant, '/');
+            if ($tenantPrefix !== '' && str_starts_with($relative, $tenantPrefix.'/')) {
+                $relative = ltrim(substr($relative, strlen($tenantPrefix)), '/');
+            }
+
+            $first = strtolower((string) strtok($relative, '/'));
+            if (isset($singularToPlural[$first])) {
+                $target = "/{$tenant}/{$singularToPlural[$first]}";
+                $rest = trim((string) substr($relative, strlen($first)), '/');
+                if ($rest !== '') {
+                    $target .= '/'.$rest;
+                }
+                if ($request->getQueryString()) {
+                    $target .= '?'.$request->getQueryString();
+                }
+
+                return redirect($target);
+            }
+
             return $next($request);
         }
 
@@ -95,6 +123,15 @@ class RedirectTenantPanelPathToRolePrefix
         }
 
         if (preg_match('#^(manufacturer|distributor|vendor|consumer)(/|$)#', $relative) === 1) {
+            if ($relative === $rolePrefix) {
+                $target = "/{$tenant}?role_dashboard_alias=1";
+                if ($request->getQueryString()) {
+                    $target .= '&'.$request->getQueryString();
+                }
+
+                return redirect($target);
+            }
+
             return $next($request);
         }
 

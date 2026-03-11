@@ -14,7 +14,11 @@ use App\Http\Controllers\ProfileLocaleController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationSectionController;
 use App\Http\Controllers\OrganizationMailAttachmentController;
+use App\Http\Controllers\SubscriptionInvoiceController;
+use App\Http\Controllers\SubscriptionRazorpayController;
 use App\Http\Controllers\SuperAdmin\TenantPanelAccessController;
+use App\Http\Middleware\InitializeTenancy;
+use App\Http\Middleware\SetTenantUrlDefaults;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -178,10 +182,44 @@ Route::middleware('auth:tenant')->get(
     [OrganizationMailAttachmentController::class, 'download']
 )->whereNumber('recipient')->whereNumber('index')->name('mail.attachments.download');
 
+Route::get(
+    '/{tenant}/subscription/invoices/{invoice}',
+    [SubscriptionInvoiceController::class, 'download']
+)->where([
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'invoice' => '[0-9]+',
+])->middleware([InitializeTenancy::class, SetTenantUrlDefaults::class])
+    ->name('tenant.subscription.invoice');
+
+Route::middleware([InitializeTenancy::class, SetTenantUrlDefaults::class])->get(
+    '/{tenant}/subscription/razorpay',
+    [SubscriptionRazorpayController::class, 'checkout']
+)->where([
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+])->name('tenant.subscription.razorpay.checkout');
+
+Route::middleware([InitializeTenancy::class, SetTenantUrlDefaults::class])->post(
+    '/{tenant}/subscription/razorpay/callback',
+    [SubscriptionRazorpayController::class, 'callback']
+)->where([
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+])->name('tenant.subscription.razorpay.callback');
+
 Route::get('/{tenant}/dashboard', function (string $tenant) {
     return redirect('/' . $tenant);
 })->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+'])
     ->name('tenant.dashboard');
+
+Route::get('/{tenant}/login', function (string $tenant) {
+    $query = request()->query();
+    $url = url("/{$tenant}/organization-admin/login");
+    if ($query) {
+        $url .= '?' . http_build_query($query);
+    }
+
+    return redirect($url);
+})->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+'])
+    ->name('tenant.login.form');
 
 Route::get('/{tenant}/{role}/login', function (string $tenant, string $role) {
     $normalizedRole = match (strtolower(trim($role))) {
@@ -215,8 +253,11 @@ Route::get('/{tenant}/{role}/login', function (string $tenant, string $role) {
             $raw = Crypt::decryptString($token);
             $payload = json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
             $issuedAt = (int) ($payload['issued_at'] ?? 0);
+            $expiresAt = (int) ($payload['exp'] ?? 0);
             $sameTenant = (string) ($payload['tenant'] ?? '') === $tenant;
-            $isFresh = $issuedAt > 0 && (time() - $issuedAt) <= 300;
+            $isFresh = $expiresAt > 0
+                ? time() <= $expiresAt
+                : ($issuedAt > 0 && (time() - $issuedAt) <= 300);
 
             if ($sameTenant && $isFresh) {
                 $prefillEmail = (string) ($payload['email'] ?? $prefillEmail);
@@ -262,39 +303,3 @@ Route::get('/{tenant}/{role}/dashboard', function (string $tenant, string $role)
             'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
             'role' => 'organization-admin|org_admin|organization-admins|manufacturer|manufacturers|distributor|distributors|vendor|vendors|consumer|consumers',
         ])->name('tenant.role.dashboard');
-
-Route::get('/{tenant}/distributors/{path?}', function (string $tenant, ?string $path = null) {
-    $target = "/{$tenant}/distributor";
-    if (filled($path)) {
-        $target .= '/'.ltrim($path, '/');
-    }
-
-    return redirect($target);
-})->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
-    'path' => '.*',
-]);
-
-Route::get('/{tenant}/vendors/{path?}', function (string $tenant, ?string $path = null) {
-    $target = "/{$tenant}/vendor";
-    if (filled($path)) {
-        $target .= '/'.ltrim($path, '/');
-    }
-
-    return redirect($target);
-})->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
-    'path' => '.*',
-]);
-
-Route::get('/{tenant}/consumers/{path?}', function (string $tenant, ?string $path = null) {
-    $target = "/{$tenant}/consumer";
-    if (filled($path)) {
-        $target .= '/'.ltrim($path, '/');
-    }
-
-    return redirect($target);
-})->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
-    'path' => '.*',
-]);

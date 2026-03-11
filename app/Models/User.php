@@ -4,7 +4,6 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Support\UserRole;
 use App\Support\Concerns\HasAuditNotifications;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
@@ -25,6 +24,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Collection;
+use App\Support\UserRole;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
@@ -44,6 +44,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         'profile_photo',
         'name',
         'email',
+        'contact_email',
         'password',
         'role',
         'invitation_token',
@@ -75,6 +76,26 @@ class User extends Authenticatable implements FilamentUser, HasTenants
             'password' => 'hashed',
             'invitation_accepted_at' => 'datetime',
         ];
+    }
+
+    public function getRoleAttribute($value): ?string
+    {
+        $role = is_string($value) ? strtolower(trim($value)) : $value;
+
+        return match ($role) {
+            'organization-admin', 'organization_admin', 'organization-admins', 'org-admin' => UserRole::ORG_ADMIN,
+            default => $role,
+        };
+    }
+
+    public function setRoleAttribute($value): void
+    {
+        $role = is_string($value) ? strtolower(trim($value)) : $value;
+
+        $this->attributes['role'] = match ($role) {
+            'organization-admin', 'organization_admin', 'organization-admins', 'org-admin' => UserRole::ORG_ADMIN,
+            default => $role,
+        };
     }
 
     public function organizations(): BelongsToMany

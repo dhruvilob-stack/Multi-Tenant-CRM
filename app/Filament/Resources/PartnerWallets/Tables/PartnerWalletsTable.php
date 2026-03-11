@@ -93,7 +93,7 @@ class PartnerWalletsTable
                                 ->columnSpanFull(),
                         ])
                         ->action(function (PartnerWallet $record, array $data): void {
-                            $actor = auth()->user();
+                            $actor = auth('tenant')->user();
                             if (! $actor) {
                                 return;
                             }
@@ -136,14 +136,14 @@ class PartnerWalletsTable
                         ->label('Open Payout Requests')
                         ->icon('heroicon-o-arrow-top-right-on-square')
                         ->url(fn (): string => CommissionPayoutResource::getUrl('index'))
-                        ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
+                        ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN),
                 ]),
             ]);
     }
 
     private static function canManageWallet(PartnerWallet $record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;
@@ -158,7 +158,7 @@ class PartnerWalletsTable
 
     private static function canRequestPayout(PartnerWallet $record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user) {
             return false;

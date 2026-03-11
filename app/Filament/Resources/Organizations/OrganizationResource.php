@@ -30,22 +30,22 @@ class OrganizationResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->role === UserRole::SUPER_ADMIN;
+        return auth('tenant')->user()?->role === UserRole::SUPER_ADMIN;
     }
 
     public static function canViewAny(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
+        return in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN, UserRole::MANUFACTURER], true);
     }
 
     public static function canCreate(): bool
     {
-        return in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
+        return in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true);
     }
 
     public static function canEdit($record): bool
     {
-        $user = auth()->user();
+        $user = auth('tenant')->user();
         if (AccessMatrix::isSuper($user)) {
             return true;
         }
@@ -55,13 +55,13 @@ class OrganizationResource extends Resource
 
     public static function canDelete($record): bool
     {
-        return AccessMatrix::isSuper(auth()->user());
+        return AccessMatrix::isSuper(auth('tenant')->user());
     }
 
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-        $user = auth()->user();
+        $user = auth('tenant')->user();
 
         if (! $user || AccessMatrix::isSuper($user)) {
             return $query;

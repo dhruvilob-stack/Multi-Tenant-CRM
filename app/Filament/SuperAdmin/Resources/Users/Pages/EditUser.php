@@ -3,6 +3,7 @@
 namespace App\Filament\SuperAdmin\Resources\Users\Pages;
 
 use App\Filament\SuperAdmin\Resources\Users\UserResource;
+use App\Services\TenantUserDeletionService;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Pages\EditRecord;
@@ -15,7 +16,12 @@ class EditUser extends EditRecord
     {
         return [
             ViewAction::make(),
-            DeleteAction::make(),
+            DeleteAction::make()
+                ->action(function ($record): void {
+                    if ($record instanceof \App\Models\User) {
+                        app(TenantUserDeletionService::class)->deleteOne($record);
+                    }
+                }),
         ];
     }
 }

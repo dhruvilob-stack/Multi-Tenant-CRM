@@ -23,7 +23,7 @@ class CrmGlobalSearchProvider implements GlobalSearchProvider
         $search = trim($query);
 
         if ($search === '') {
-            return null;
+            return ModalGlobalSearchResults::make();
         }
 
         $results = ModalGlobalSearchResults::make();
@@ -57,7 +57,7 @@ class CrmGlobalSearchProvider implements GlobalSearchProvider
             $results->category('Navigation', $navigationResults);
         }
 
-        return $results->getCategories()->isEmpty() ? null : $results;
+        return $results;
     }
 
     /**

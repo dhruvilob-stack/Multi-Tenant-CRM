@@ -25,6 +25,7 @@ class UsersTable
                     ->rowIndex(),
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('email')->searchable(),
+                TextColumn::make('contact_email')->label('Actual Gmail')->searchable(),
                 TextColumn::make('role')->badge(),
                 TextColumn::make('customRole.name')->label('Custom Role')->badge(),
                 TextColumn::make('organization.name')->label('Organization'),
@@ -44,17 +45,17 @@ class UsersTable
                         'tenant' => (string) request()->route('tenant'),
                         'user' => $record,
                     ]))
-                    ->visible(fn (User $record): bool => auth()->user()?->role === UserRole::ORG_ADMIN
-                        && (int) $record->id !== (int) auth()->id()
+                    ->visible(fn (User $record): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN
+                        && (int) $record->id !== (int) auth('tenant')->id()
                         && in_array((string) $record->role, [UserRole::MANUFACTURER, UserRole::DISTRIBUTOR, UserRole::VENDOR, UserRole::CONSUMER], true)),
                 DeleteAction::make()
-                    ->visible(fn (): bool => in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
+                    ->visible(fn (): bool => in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
             ])
             ->toolbarActions([
                 ...ResourceDataExchange::toolbarActions('users'),
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
-                        ->visible(fn (): bool => in_array(auth()->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
+                        ->visible(fn (): bool => in_array(auth('tenant')->user()?->role, [UserRole::SUPER_ADMIN, UserRole::ORG_ADMIN], true)),
                 ]),
             ]);
     }

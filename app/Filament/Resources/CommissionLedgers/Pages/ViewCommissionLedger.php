@@ -16,7 +16,7 @@ class ViewCommissionLedger extends ViewRecord
     {
         return [
             EditAction::make()
-                ->visible(fn (): bool => auth()->user()?->role === UserRole::ORG_ADMIN),
+                ->visible(fn (): bool => auth('tenant')->user()?->role === UserRole::ORG_ADMIN),
         ];
     }
 

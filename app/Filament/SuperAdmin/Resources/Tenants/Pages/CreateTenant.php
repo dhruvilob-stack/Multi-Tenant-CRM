@@ -8,7 +8,9 @@ use App\Models\User;
 use App\Services\TenantLifecycleService;
 use App\Services\TenantSyncService;
 use App\Services\TenantDatabaseManager;
+use App\Services\UserAccessMailService;
 use App\Support\UserRole;
+use App\Support\PanelLoginPrefillStore;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
@@ -39,7 +41,7 @@ class CreateTenant extends CreateRecord
             'name' => (string) $data['name'],
             'slug' => $slug,
             'email' => (string) $data['email'],
-            'status' => (string) ($data['status'] ?? 'active'),
+            'status' => 'inactive',
         ]);
 
         $tenant = app(TenantSyncService::class)->ensureForOrganization($organization);
@@ -61,6 +63,7 @@ class CreateTenant extends CreateRecord
                 'login_email' => (string) $data['email'],
                 'login_password_encrypted' => Crypt::encryptString((string) $data['password']),
             ]),
+            'status' => 'inactive',
         ])->save();
 
         $hashedPassword = Hash::make((string) $data['password']);
@@ -71,9 +74,10 @@ class CreateTenant extends CreateRecord
             'password' => $hashedPassword,
             'role' => UserRole::ORG_ADMIN,
             'organization_id' => (int) $organization->id,
-            'status' => (string) ($data['status'] ?? 'active'),
+            'status' => 'inactive',
             'parent_id' => Auth::id(),
             'email_verified_at' => now(),
+            'contact_email' => (string) ($data['admin_contact_email'] ?? ''),
         ]);
 
         $orgAdmin->organizations()->syncWithoutDetaching([$organization->id]);
@@ -88,7 +92,7 @@ class CreateTenant extends CreateRecord
                 'name' => (string) $organization->name,
                 'slug' => (string) $organization->slug,
                 'email' => (string) $organization->email,
-                'status' => (string) ($organization->status ?? 'active'),
+                'status' => (string) ($organization->status ?? 'inactive'),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]
@@ -101,9 +105,10 @@ class CreateTenant extends CreateRecord
                 'parent_id' => null,
                 'name' => (string) $data['name'],
                 'email' => (string) $data['email'],
+                'contact_email' => (string) ($data['admin_contact_email'] ?? ''),
                 'password' => $hashedPassword,
                 'role' => UserRole::ORG_ADMIN,
-                'status' => (string) ($data['status'] ?? 'active'),
+                'status' => 'inactive',
                 'email_verified_at' => now(),
                 'remember_token' => null,
                 'created_at' => now(),
@@ -112,6 +117,9 @@ class CreateTenant extends CreateRecord
         );
 
         app(TenantDatabaseManager::class)->activateLandlordConnection();
+
+        PanelLoginPrefillStore::saveForUser($orgAdmin, (string) $data['password']);
+        app(UserAccessMailService::class)->sendForUser($orgAdmin, (string) $data['password']);
 
         return $organization;
     }
