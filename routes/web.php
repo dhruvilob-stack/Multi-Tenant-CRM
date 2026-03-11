@@ -39,6 +39,19 @@ Route::get('/', function () {
     ]);
 })->name('landing');
 
+Route::get('/demo-dn-crm', function () {
+    return view('demo-dn-crm', [
+        'superAdminUrl' => url('/super-admin/login'). '?' . http_build_query([
+            'email' => 'superadmin@example.com',
+            'password' => 'password',
+        ]),
+        'tenantDemoUrl' => url('/nebulonix/login') . '?' . http_build_query([
+            'email' => 'org@nebulonix.com',
+            'password' => 'password',
+        ]),
+    ]);
+})->name('demo.dn-crm');
+
 Route::get('/demo-image/{file}', function (string $file): BinaryFileResponse {
     abort_unless(in_array($file, ['1.png', '2.png', '3.png'], true), 404);
     $path = base_path($file);
@@ -69,7 +82,7 @@ Route::post('/super-admin/login', [PanelLoginController::class, 'loginSuperAdmin
     ->name('super-admin.login.submit');
 
 Route::post('/{tenant}/login', [PanelLoginController::class, 'loginTenant'])
-    ->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+'])
+    ->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+'])
     ->name('tenant.login.submit');
 
 Route::get('/forgot-password', [ForgotPasswordController::class, 'show']);
@@ -94,7 +107,7 @@ Route::get('/demo/flow', [DemoController::class, 'flow']);
 Route::get('/demo/navigation', [DemoController::class, 'navigation']);
 
 Route::prefix('{tenant}')
-    ->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+'])
+    ->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+'])
     ->middleware('auth:tenant')
     ->group(function (): void {
         Route::post('/organizations/{id}/activate', [WorkflowController::class, 'activateOrganization']);
@@ -143,7 +156,7 @@ Route::get(
     '/{tenant}/org-admin/users/{user}/open-panel',
     [UserPanelAccessController::class, 'open']
 )->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
     'user' => '[0-9]+',
 ])->name('org-admin.users.open-panel');
 
@@ -151,7 +164,7 @@ Route::get(
     '/{tenant}/impersonate/{user}',
     [ImpersonationController::class, 'start']
 )->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
     'user' => '[0-9]+',
 ])->name('tenant.impersonate.start');
 
@@ -159,7 +172,7 @@ Route::get(
     '/{tenant}/stop-impersonation',
     [ImpersonationController::class, 'stop']
 )->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
 ])->name('tenant.impersonate.stop');
 
 Route::middleware('auth:tenant')->prefix('filament/notifications/sections')->group(function (): void {
@@ -187,7 +200,7 @@ Route::get(
     '/{tenant}/subscription/invoices/{invoice}',
     [SubscriptionInvoiceController::class, 'download']
 )->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
     'invoice' => '[0-9]+',
 ])->middleware([InitializeTenancy::class, SetTenantUrlDefaults::class])
     ->name('tenant.subscription.invoice');
@@ -196,33 +209,33 @@ Route::middleware([InitializeTenancy::class, SetTenantUrlDefaults::class])->get(
     '/{tenant}/subscription/razorpay',
     [SubscriptionRazorpayController::class, 'checkout']
 )->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
 ])->name('tenant.subscription.razorpay.checkout');
 
 Route::middleware([InitializeTenancy::class, SetTenantUrlDefaults::class])->post(
     '/{tenant}/subscription/razorpay/callback',
     [SubscriptionRazorpayController::class, 'callback']
 )->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
 ])->name('tenant.subscription.razorpay.callback');
 
 Route::middleware([InitializeTenancy::class, SetTenantUrlDefaults::class])->get(
     '/{tenant}/subscription/phonepe',
     [SubscriptionPhonepeController::class, 'checkout']
 )->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
 ])->name('tenant.subscription.phonepe.checkout');
 
 Route::middleware([InitializeTenancy::class, SetTenantUrlDefaults::class])->match(['get', 'post'], 
     '/{tenant}/subscription/phonepe/callback',
     [SubscriptionPhonepeController::class, 'callback']
 )->where([
-    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+    'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
 ])->name('tenant.subscription.phonepe.callback');
 
 Route::get('/{tenant}/dashboard', function (string $tenant) {
     return redirect('/' . $tenant);
-})->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+'])
+})->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+'])
     ->name('tenant.dashboard');
 
 Route::get('/{tenant}/login', function (Request $request, string $tenant) {
@@ -266,7 +279,7 @@ Route::get('/{tenant}/login', function (Request $request, string $tenant) {
         'prefillEmail' => $prefillEmail,
         'prefillPassword' => $prefillPassword,
     ]);
-})->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+'])
+})->where(['tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+'])
     ->name('tenant.login.form');
 
 Route::get('/{tenant}/{role}/login', function (string $tenant, string $role) {
@@ -324,7 +337,7 @@ Route::get('/{tenant}/{role}/login', function (string $tenant, string $role) {
         'prefillPassword' => $prefillPassword,
     ]);
 })->where([
-            'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+            'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
             'role' => 'organization-admin|org_admin|organization-admins|manufacturer|manufacturers|distributor|distributors|vendor|vendors|consumer|consumers',
         ])->name('tenant.role.login');
 
@@ -348,7 +361,7 @@ Route::get('/{tenant}/{role}/dashboard', function (string $tenant, string $role)
         default => "/{$tenant}",
     });
 })->where([
-            'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$).+',
+            'tenant' => '^(?!super-admin$|platform$|login$|forgot-password$|reset-password$|filament$|livewire.*|up$|demo-dn-crm$).+',
             'role' => 'organization-admin|org_admin|organization-admins|manufacturer|manufacturers|distributor|distributors|vendor|vendors|consumer|consumers',
         ])->name('tenant.role.dashboard');
 // debug search diagnostics

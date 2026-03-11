@@ -108,6 +108,30 @@ nav{
 .nav-links a:hover{color:var(--brand)}
 .nav-right{display:flex;align-items:center;gap:.85rem}
 
+.cart-btn{
+  position:relative;
+  width:42px;height:42px;
+  border-radius:12px;
+  border:1.5px solid var(--line);
+  background:var(--card);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:0 6px 18px var(--shadow);
+  transition:transform .15s,box-shadow .2s,border-color .2s;
+}
+.cart-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px var(--shadow-lg)}
+.cart-btn.has-items{border-color:var(--brand)}
+.cart-btn svg{width:20px;height:20px;stroke:var(--ink)}
+.cart-count{
+  position:absolute;top:-6px;right:-6px;
+  min-width:20px;height:20px;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--brand),var(--brand2));
+  color:#fff;font-size:.7rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 16px var(--shadow-lg);
+}
+
 /* Theme toggle */
 .toggle{
   position:relative;width:52px;height:28px;cursor:pointer;
@@ -196,6 +220,44 @@ h1.hero-title em{
   max-width:500px;margin-bottom:2rem;
 }
 .hero-cta{display:flex;gap:.85rem;flex-wrap:wrap}
+
+/* ─── CART DRAWER ─────────────────────────────────────────────── */
+.cart-overlay{
+  position:fixed;inset:0;z-index:180;
+  background:rgba(13,27,42,.35);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s ease;
+}
+.cart-overlay.show{opacity:1;pointer-events:auto}
+.cart-panel{
+  position:fixed;top:0;right:0;z-index:190;
+  width:min(420px,90vw);height:100vh;
+  background:var(--card);
+  border-left:1px solid var(--line);
+  box-shadow:-14px 0 30px var(--shadow-lg);
+  transform:translateX(100%);
+  transition:transform .25s ease;
+  display:flex;flex-direction:column;
+}
+.cart-panel.open{transform:translateX(0)}
+.cart-head{
+  padding:1.4rem 1.6rem;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.cart-title{font-weight:800;font-size:1.05rem}
+.cart-close{
+  border:none;background:transparent;color:var(--muted);
+  font-size:1.2rem;cursor:pointer;
+}
+.cart-body{padding:1.4rem 1.6rem;display:flex;flex-direction:column;gap:1rem}
+.cart-card{
+  background:var(--card2);border:1px solid var(--line);
+  border-radius:16px;padding:1.2rem;
+}
+.cart-card h4{font-size:1.05rem;margin-bottom:.4rem}
+.cart-price{font-size:1.6rem;font-weight:800;color:var(--ink)}
+.cart-meta{font-size:.9rem;color:var(--muted);margin-top:.4rem}
+.cart-action{margin-top:1rem}
 
 /* MERCHANT REGISTER CARD */
 .register-card{
@@ -433,8 +495,15 @@ footer{
     <div class="toggle" id="themeToggle" title="Toggle dark / light mode" role="button" tabindex="0" aria-label="Toggle theme">
       <div class="toggle-icons"><span>☀️</span><span>🌙</span></div>
     </div>
-    <a href="{{ $superAdminUrl }}" target="_blank" class="btn btn-outline">Demo Super Admin Login</a>
-    <a href="{{ $tenantDemoUrl }}" target="_blank" class="btn btn-primary">Demo Tenant Login</a>
+    <button class="cart-btn" id="cartButton" aria-label="Open cart">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 6h15l-1.5 9h-12z"/>
+        <path d="M6 6l-1-3H2"/>
+        <circle cx="9" cy="20" r="1.5"/>
+        <circle cx="18" cy="20" r="1.5"/>
+      </svg>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
   </div>
 </nav>
 
@@ -454,11 +523,11 @@ footer{
         quote-to-invoice workflows, and a unified control panel that scales with your business.
       </p>
       <div class="hero-cta">
-        <a href="#access" class="btn btn-primary">
+        <button type="button" class="btn btn-primary" id="buyNowBtn">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
          Buy Now
-        </a>
-        <a href="#access" class="btn btn-outline">
+        </button>
+        <a href="/demo-dn-crm" class="btn btn-outline" target="_blank" rel="noopener">
           <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"/></svg>
           Live Demo  <svg xmlns="http://www.w3.org/2000/svg" 
      width="18" 
@@ -631,6 +700,24 @@ footer{
   </div> --}}
 </div>
 
+<div class="cart-overlay" id="cartOverlay"></div>
+<aside class="cart-panel" id="cartPanel" aria-hidden="true">
+  <div class="cart-head">
+    <div class="cart-title">Your Cart</div>
+    <button class="cart-close" id="cartClose" aria-label="Close cart">×</button>
+  </div>
+  <div class="cart-body">
+    <div class="cart-card">
+      <h4>Multi Tenant CRM System</h4>
+      <div class="cart-price">$899</div>
+      <div class="cart-meta">Full source code, multi-tenant SaaS, Filament admin, workflows, invoices.</div>
+      <div class="cart-action">
+        <button class="btn btn-primary" type="button">Buy Now</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
 <!-- ── FOOTER ─────────────────────────────────────────────────────── -->
 <footer>
   <div class="logo" style="font-size:1rem">
@@ -658,6 +745,34 @@ toggle.addEventListener('click', () => {
 });
 toggle.addEventListener('keydown', e => {
   if (e.key === 'Enter' || e.key === ' ') toggle.click();
+});
+
+const cartButton = document.getElementById('cartButton');
+const cartCount = document.getElementById('cartCount');
+const cartPanel = document.getElementById('cartPanel');
+const cartOverlay = document.getElementById('cartOverlay');
+const cartClose = document.getElementById('cartClose');
+const buyNowBtn = document.getElementById('buyNowBtn');
+
+const openCart = () => {
+  cartPanel.classList.add('open');
+  cartOverlay.classList.add('show');
+  cartPanel.setAttribute('aria-hidden', 'false');
+};
+const closeCart = () => {
+  cartPanel.classList.remove('open');
+  cartOverlay.classList.remove('show');
+  cartPanel.setAttribute('aria-hidden', 'true');
+};
+
+cartButton.addEventListener('click', openCart);
+cartOverlay.addEventListener('click', closeCart);
+cartClose.addEventListener('click', closeCart);
+
+buyNowBtn.addEventListener('click', () => {
+  cartCount.textContent = '1';
+  cartButton.classList.add('has-items');
+  openCart();
 });
 </script>
 </body>

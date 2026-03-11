@@ -125,4 +125,20 @@
             justify-content: center;
         }
     </style>
+
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const email = params.get('email');
+            const password = params.get('password');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            if (email && emailInput && !emailInput.value) {
+                emailInput.value = email;
+            }
+            if (password && passwordInput && !passwordInput.value) {
+                passwordInput.value = password;
+            }
+        })();
+    </script>
 </x-filament-panels::layout.simple>

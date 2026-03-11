@@ -10,6 +10,8 @@
                 @csrf
 
                 @php($errorBag = session('errors'))
+                @php($prefillEmail = old('email', (string) request()->query('email', '')))
+                @php($prefillPassword = old('password', (string) request()->query('password', '')))
                 @if ($errorBag && $errorBag->any())
                     <x-filament::callout
                         color="danger"
@@ -26,7 +28,7 @@
                             name="email"
                             type="email"
                             autocomplete="email"
-                            :value="old('email')"
+                            :value="$prefillEmail"
                             required
                             autofocus
                         />
@@ -41,6 +43,7 @@
                             name="password"
                             type="password"
                             autocomplete="current-password"
+                            :value="$prefillPassword"
                             required
                         />
                     </x-filament::input.wrapper>
@@ -103,4 +106,20 @@
             justify-content: center;
         }
     </style>
+
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const email = params.get('email');
+            const password = params.get('password');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            if (email && emailInput && !emailInput.value) {
+                emailInput.value = email;
+            }
+            if (password && passwordInput && !passwordInput.value) {
+                passwordInput.value = password;
+            }
+        })();
+    </script>
 </x-filament-panels::layout.simple>

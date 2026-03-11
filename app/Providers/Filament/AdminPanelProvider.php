@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\ApplyUserLocale;
+use App\Http\Middleware\BypassTenantDemoRoutes;
 use App\Http\Middleware\InitializeTenancy;
 use App\Http\Middleware\RedirectTenantPanelPathToRolePrefix;
 use App\Http\Middleware\RedirectTenantRootToRoleHome;
@@ -88,6 +89,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 SetPanelSessionCookie::class,
+                BypassTenantDemoRoutes::class,
                 StartSession::class,
                 InitializeTenancy::class,
                 SetTenantUrlDefaults::class,
